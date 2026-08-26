@@ -65,11 +65,16 @@ actions only and can never approve a run.
 
 ## D4 — SOP seed comes from the real checklists
 
+> Refined by D8: only two of the seven documents turned out to be checklists.
+> Refined by D9/D11: the seeded flags are a starting point, not a fixed
+> decision — admins edit them, and D11 keeps those edits from reaching
+> backwards into completed runs.
+
 **Decided 26 Aug 2026.** Resolves spec open question 3. AKIRA has seven existing
 operational checklist documents (Kitchen Cleaning, Mise-en-place, Housekeeping,
 FNB Hot Range, FNB Service, FNB Desserts, Beverages).
 
-**Why:** the spec itself says that if real SOP documentation exists it _is_ the
+**Why:** the spec itself says that if real SOP documentation exists it *is* the
 seed data and should replace section 4.4's invented templates. Staff recognise
 their own checklists; they will not recognise plausible-sounding substitutes.
 
@@ -94,15 +99,258 @@ variables use Supabase's current names — `SUPABASE_SECRET_KEY` and
 `SUPABASE_JWKS_URL` — rather than the older `SUPABASE_SERVICE_KEY` and
 `SUPABASE_ANON_KEY` the spec's prompt pack references.
 
+## D6 — AI photo review in Stage 1, advisory only
+
+**Decided 26 Aug 2026.** Each outlet holds its own standard reference photos.
+A submitted photo is reviewed first by an AI, then by a human.
+
+**Why:** requested directly. Note this moves AI into Stage 1: spec section 7.2
+lists AI parsing as explicitly out of scope for Stage 1, and section 6 places AI
+in Stage 2.
+
+**Consequences, shaped to keep the spec's one durable AI rule ("the LLM parses
+and explains, deterministic code decides"):**
+
+- The AI is **advisory**. It emits a verdict, a confidence and a rationale
+  against that outlet's reference photo. It never blocks a submission and never
+  approves a run. A manager still decides, which is what keeps the
+  separation-of-duties constraint meaningful.
+- **"Visible light conditions" is a deterministic check, not an AI one.** Mean
+  luminance on upload, flagged `too_dark`. Cheap, repeatable, no model call.
+- New tables: `outlet_item_reference_photos` (per-outlet standard, one active
+  per outlet per item) and `run_item_ai_reviews` (kept separate from
+  `checklist_run_items` so a review can be re-run against a newer model without
+  destroying what an earlier one said; model and prompt version stay auditable).
+- New integrity flags: `too_dark`, `ai_mismatch`.
+- The vision pipeline itself lands with the integrity engine in P7.
+
+## D7 — Schema extensions the real checklists forced
+
+**Decided 26 Aug 2026.** Reading AKIRA's seven operational documents exposed
+three things the spec's schema could not express.
+
+1. **Bilingual fields.** Every paper checklist carries English and Bengali on
+   every line, and the kitchen reads Bengali. Added nullable `title_bn`,
+   `instruction_bn`, `name_bn`, `label_bn`, `caption_bn`. An English-only
+   rendering would be less usable than the paper it replaces.
+2. **`frequency` could not express the real cadences.** The spec allows
+   per_shift/daily/weekly/monthly. AKIRA actually runs daily, **alternate day**,
+   3 days a week, and **every 15 days**. The weekly-cycle ones fit
+   `active_weekdays`; alternate-day and fortnightly do not align to a 7-day
+   cycle at all. Added `alternate_day` and `fortnightly` to the enum, plus
+   `interval_days` and `anchor_date` on `checklist_assignments`.
+3. **Weekly deep clean is per-item-per-weekday.** The kitchen list pins a
+   different task to each weekday (Mon non-veg fridge, Tue veg chiller, Wed veg
+   freezer, Thu staff toilet, Fri/Sat maintenance), but `active_weekdays` sits
+   on the assignment, not the item. Modelled as separate single-purpose
+   templates, which is schema-native and needs no new column.
+
+Also added `job_runs` (0006), which the conventions require but the spec's table
+list omits, and `outlet_devices` for D3.
+
+## D8 — Only 2 of the 7 operational documents are SOP checklists
+
+**Decided 26 Aug 2026.** The other five are inventory count and requisition
+sheets (Sl No / Category / Department / Item Name / Bengali Name / Unit /
+Physical Closing Count / Requisition Qty Needed), which is Stage 2 stock-count
+data, not Stage 1 compliance.
+
+- **Real SOP checklists:** Kitchen Cleaning & Sanitation; Service & Housekeeping
+  Operations.
+- **Inventory sheets:** Hot Range (97 items), FNB Service (19), Housekeeping
+  (13), Beverages (13), Desserts (9). Captured as Stage 2 seed data, not loaded
+  into any Stage 1 table.
+- **Mise-en-place** is a par-level tracker. Seeded as a Stage 1 prep-readiness
+  checklist using `requires_value` numeric items with the paper's minimums as
+  `value_min`; the same data migrates to inventory par levels in Stage 2.
+- The paper has **no temperature logging, no opening or closing procedure, and
+  no cash or POS reconciliation**. For a ramen kitchen the missing temperature
+  log is a genuine food-safety gap, so one Food Safety Daily template is seeded
+  from spec 4.4 to cover it. Nothing else is invented.
+
+## D9 — Admin-editable settings, and what stays locked
+
+**Decided 26 Aug 2026.** Requested directly: an admin settings area where
+"everything" is editable.
+
+`app_settings` (migration 0010) is **append-only with an effective date**. A
+change inserts a new row; the value in force at any moment is the newest row
+whose `effective_from` is at or before it, with an outlet override beating the
+global value. Scoring a period from three months ago therefore uses the weights
+that were live then, so historical outlet scores stay reproducible instead of
+silently rewriting themselves whenever somebody nudges a weight.
+
+The **code owns the schema of settings**, not the table. `app/core/settings.py`
+holds a registry: every known key with its type, default, valid range, and
+whether an outlet may override it. A key absent from the registry is ignored on
+read. That is what stops a typo or an out-of-range value from quietly breaking
+scoring.
+
+Editable: scoring weights and health bands, integrity thresholds, AI review
+controls, job times and notification recipients.
+
+**Deliberately not editable — the 05:00 business-date rollover.** Two concrete
+reasons, not caution:
+
+1. `business_date()` is declared `immutable`, which is what lets the planner use
+   it in index expressions. Reading a runtime value would force it down to
+   `stable` and cost those indexes.
+2. Every historical row already stores its `business_date`. A changed rule would
+   disagree with months of recorded data.
+
+Changing it is a migration plus an explicit backfill, on purpose.
+
+## D10 — Inventory catalogue pulled into Stage 1
+
+**Decided 26 Aug 2026.** The spec defers the whole stock module to Stage 2.
+Adding inventory items through admin requires the catalogue now, so migration
+0009 lands it. Stage 1 ships **catalogue and per-outlet levels only** — there is
+no counting flow and no requisition engine; both will build on these tables
+rather than replacing them.
+
+**Shape: one shared catalogue, levels per outlet.** Add an item once and every
+outlet can stock it; a larger outlet holds more of it. Two outlets entering the
+same ingredient under two ids would make cross-outlet consumption and cost
+comparison meaningless.
+
+Seeded with all 151 items transcribed from the five paper count sheets, with
+Bengali names, units and departments. `scripts/generate_inventory_seed.py` holds
+the transcription so it stays auditable and regenerable; the SQL it emits is
+idempotent.
+
+**Three data-quality problems found in the source sheets**, corrected in the
+seed with a `notes` value recording the original:
+
+- *Begun* carried the Bengali "শুরু করা হয়েছে" (= "has been started"), a
+  machine-translation error. Begun is the aubergine, বেগুন.
+- *Habit Panko* carried "অভ্যাস" (= "habit"), the same class of literal
+  mistranslation. Recorded as Panko breadcrumbs.
+- *Pillow* (বালিশ) is filed under Cleaning in housekeeping, which looks wrong —
+  most likely a scouring pad. Left as-is pending confirmation.
+
+Also note the bar sheet and the mise-en-place sheet both list Club Soda, Sugar
+Syrup, Lemon and Ice. The unique index is per department, so both survive as
+separate rows; they may or may not be genuine duplicates.
+
+## D11 — Template item version history
+
+**Decided 26 Aug 2026.** Follows directly from D9: once admins can freely edit
+`requires_photo` and `is_critical`, those edits must not reach backwards.
+
+`checklist_runs` already snapshotted `template_version`, and the spec requires
+historical runs to render against the definitions live when they ran — but
+`template_version` referred to nothing retrievable. Item rows are mutated in
+place, so a run from three weeks ago would re-render against today's flags.
+Marking an item critical would retroactively make every past run that failed it
+look like a critical failure, and any recomputed score would change with it.
+
+`checklist_template_item_versions` (migration 0011) is the thing
+`template_version` refers to. Every material edit writes an immutable row at the
+new template version; `checklist_run_items.template_item_version_id` points at
+the exact definition answered against. The live
+`checklist_template_items` row remains the current definition for new runs.
+
+Same philosophy as `app_settings`: history is reproducible, not rewritten. There
+the value in force resolves by effective date; here the definition in force
+resolves by template version.
+
+**Verified:** with an item edited from non-critical to critical and the template
+bumped v1 to v2, a run recorded at v1 still resolves to `is_critical = false`
+and `requires_photo = false`, a run at v2 resolves to true for both, and the
+live row shows the admin's edit.
+
+**What this obliges the service layer to do (P4).** A material edit must, in one
+transaction: bump `checklist_templates.version`, insert a new version row for
+every item in the template, and write the audit entry. Editing only a
+template's description is not material and must not bump the version. The run
+materialiser must stamp `template_item_version_id` on every run item it creates.
+
+## D12 — What the integrity engine had to decide for itself
+
+**Decided 27 Aug 2026.** Building P7 forced six choices the spec and D6 left
+open. Each is here because it will look arbitrary to whoever reads the code
+next.
+
+**1. A flag carries its evidence.** Migration 0004 gave run items an
+`integrity_flags` array and nowhere to say *why*. `duplicate_photo` on its own
+tells a manager to distrust a photo without telling them what it matched, which
+is the kind of unfalsifiable red chip staff learn to ignore within a month.
+0013 adds `integrity_detail`: the matched run and Hamming distance, the measured
+luminance against its floor, the share of a run that landed inside the burst
+window. The review screen renders the evidence beneath every chip.
+
+**2. Run-level flags are not item-level flags.** `late`, `out_of_geofence` and
+`burst_upload` describe a submission, not a photograph. Stamping them onto each
+photo would misplace the evidence and inflate any per-photo count built on top.
+`checklist_runs` gets its own `integrity_flags` array; `integrity_flag_count`
+is the sum of both, which is the number the outlet-score penalty reads.
+
+**3. Each pass owns its own flags.** The deterministic photo pass recomputes
+duplicate/stale/dark and therefore *clears* them when a photo is re-shot — a
+rejected-and-redone item must not keep an accusation it has answered — but
+never touches `ai_mismatch`, which it knows nothing about. The AI pass is the
+mirror image.
+
+**4. `mark_missed` touches `pending` only, never `in_progress`.** `missed` is
+terminal, so flipping a run somebody is halfway through would lock it and
+discard the work. A run being done late is what the `late` flag exists for. The
+exception it raises is **medium**, not high: nobody did the checklist, which is
+a management problem to chase, not the same class of event as a critical
+food-safety item failed outright.
+
+**5. Three AI-review rules, refining D6.**
+
+- *The confidence threshold is applied at read time.* The model's raw verdict
+  and confidence are stored; `ai_review.uncertain_below_confidence` downgrades a
+  low-confidence verdict to `uncertain` when the flag is decided and when the
+  screen renders it. Storing the downgraded value would make the record
+  unreadable against a threshold that has since moved — the same reason
+  `app_settings` is effective-dated (D9).
+- *`ai_mismatch` fires in one direction only:* staff recorded a pass and the
+  reviewer is confident it is a fail. The reverse is staff being harder on
+  themselves than the machine, and flagging it would punish honesty.
+- *A missing reference photo degrades rather than blocks.* D6 says the AI
+  compares against that outlet's own standard, and it does when one exists.
+  Requiring one would mean nothing works until every station at every outlet has
+  been shot under service lighting — which is exactly how that prerequisite went
+  unbuilt for three epics. Without one the model judges on the item's
+  instruction and is told to lean towards `uncertain`; the review records that it
+  had no standard.
+
+Silence from the model is **not** `uncertain`. An unreachable provider is a
+recorded skip with a reason, never a row: writing one either way would put a
+fabricated opinion into an audit trail.
+
+**6. Notifications degrade loudly.** Refines A3. With no SMTP host configured
+the digest is still built, rendered and logged, and the `job_runs` row records
+`smtp_not_configured`. Requested directly: leave it degrading visibly rather
+than switching the configured channel to `log_only`, because a digest that
+quietly stopped sending while reporting success every morning is the precise
+failure this epic exists to prevent.
+
+**Vision model: `claude-sonnet-5`, by the owner's decision.** Every photo on
+every run at every outlet is reviewed, so the per-photo cost is the whole cost.
+`run_item_ai_reviews` records the model and prompt version on every verdict and
+is keyed on both, so re-running a period against a more capable model later is
+additive and never overwrites what the first one said.
+
+**Found while testing, not while reading:** the six photos already in Storage
+from P5 and P6 are 262-byte stubs, not decodable images. `process_photo` now
+raises `UndecodableImage` rather than swallowing it, the failure lands in
+`job_runs`, and the item stays unprocessed — which the review screen shows as
+"not checked yet", which is the truth. `scripts/backfill_photo_integrity.py`
+hashes pre-P7 photos and is idempotent.
+
 ---
 
 ## Assumptions in force — challenge these if wrong
 
-- **A1 — `ops_manager` approves outlet-manager submissions.** Spec open question 5. Without a named approver above the outlet manager, the separation-of-duties
+- **A1 — `ops_manager` approves outlet-manager submissions.** Spec open question
+  5. Without a named approver above the outlet manager, the separation-of-duties
   constraint blocks the real closing-checklist workflow.
 - **A2 — Petpooja is manual XLSX upload for all of Stage 1.** Spec open question
   1. `api_source.py` ships as a documented stub. Revisit when the vendor's API
-     pricing is known.
+  pricing is known.
 - **A3 — Email only for Stage 1 notifications.** Spec open question 6. The
   `Notifier` interface is pluggable so a WhatsApp implementation is additive.
 - **A4 — Outlet 2 timeline is unknown**, so the dev seed carries a second dummy
