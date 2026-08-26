@@ -2,6 +2,46 @@ import { supabase } from "./supabase";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
+/**
+ * Shared-tablet actor assertion, from /floor/identify. Kept in sessionStorage
+ * only: the next person picking up the tablet must never inherit it across a
+ * browser restart, and "hand over" clears it explicitly.
+ */
+const ACTOR_KEY = "akira.actor";
+
+export interface StoredActor {
+  token: string;
+  profile_id: string;
+  full_name: string;
+  role: string;
+  expires_at: number;
+}
+
+export function getActor(): StoredActor | null {
+  try {
+    const raw = sessionStorage.getItem(ACTOR_KEY);
+    if (!raw) return null;
+    const actor = JSON.parse(raw) as StoredActor;
+    if (actor.expires_at * 1000 < Date.now()) {
+      sessionStorage.removeItem(ACTOR_KEY);
+      return null;
+    }
+    return actor;
+  } catch {
+    return null;
+  }
+}
+
+export function setActor(actor: StoredActor | null): void {
+  try {
+    if (actor) sessionStorage.setItem(ACTOR_KEY, JSON.stringify(actor));
+    else sessionStorage.removeItem(ACTOR_KEY);
+  } catch {
+    // Storage unavailable (private mode); the actor lives in memory via state.
+  }
+  window.dispatchEvent(new Event("akira:actor-changed"));
+}
+
 /** RFC 7807 problem+json, as the API emits it. */
 export interface Problem {
   type: string;
@@ -75,6 +115,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     headers: {
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
       ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      ...(getActor() ? { "X-Actor-Token": getActor()!.token } : {}),
       ...headers,
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),

@@ -477,6 +477,173 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sop/runs/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Today's runs for an outlet
+         * @description Scoped by role: staff see staff runs, shift leads see floor runs,
+         *     managers see everything at the outlet. 'Today' is the business date —
+         *     at 1am this still returns the evening's checklists.
+         */
+        get: operations["today_sop_runs_today_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/runs/materialise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create today's runs now
+         * @description Manual trigger for the 05:00 job (which arrives in the integrity epic).
+         *     Idempotent — re-running creates nothing twice.
+         */
+        post: operations["materialise_sop_runs_materialise_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One run with its items
+         * @description Items carry the snapshot definitions they will be answered against —
+         *     the version that was live when the run was created, not today's.
+         */
+        get: operations["get_run_sop_runs__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/runs/{run_id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start a run */
+        post: operations["start_sop_runs__run_id__start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/runs/{run_id}/items/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Answer an item
+         * @description Last write wins, and identical retries are naturally idempotent — the
+         *     offline queue can safely replay this after a dropped response.
+         */
+        patch: operations["answer_sop_runs__run_id__items__item_id__patch"];
+        trace?: never;
+    };
+    "/sop/runs/{run_id}/items/{item_id}/photo-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get a photo upload URL
+         * @description A signed grant for one exact object path, minted here so the client
+         *     never chooses where its bytes land.
+         */
+        post: operations["photo_url_sop_runs__run_id__items__item_id__photo_url_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/runs/{run_id}/items/{item_id}/photo-confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm an uploaded photo
+         * @description Verifies the object exists in storage, then writes the metadata. Never
+         *     the other way round.
+         */
+        post: operations["photo_confirm_sop_runs__run_id__items__item_id__photo_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/runs/{run_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit a run
+         * @description Validates completeness (422 lists the offending items), computes the
+         *     score, late-ness and geofence, raises an exception per critical fail, and
+         *     locks the run into 'submitted'. Denied geolocation is not a flag — submit
+         *     proceeds and geo_ok stays null.
+         */
+        post: operations["submit_sop_runs__run_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sop/categories": {
         parameters: {
             query?: never;
@@ -661,6 +828,52 @@ export interface paths {
         patch: operations["update_assignment_sop_assignments__assignment_id__patch"];
         trace?: never;
     };
+    "/floor/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Who can identify on this tablet
+         * @description The PIN-pad picker: floor staff of the tablet's outlet. Only meaningful
+         *     on a device session; an individual login is already somebody.
+         */
+        get: operations["list_floor_staff_floor_staff_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/floor/identify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enter your PIN
+         * @description Turns a device session plus a correct PIN into a short-lived actor
+         *     assertion. Five wrong attempts lock the PIN for five minutes. Every
+         *     failure is audited.
+         *
+         *     The assertion authorises floor actions only. It can never approve a run
+         *     and never reaches the management shell.
+         */
+        post: operations["identify_floor_identify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -706,6 +919,16 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AnswerItemRequest */
+        AnswerItemRequest: {
+            result: components["schemas"]["ItemResult"];
+            /** Value Numeric */
+            value_numeric?: number | null;
+            /** Value Text */
+            value_text?: string | null;
+            /** Note */
+            note?: string | null;
+        };
         /** Assignment */
         Assignment: {
             /**
@@ -948,6 +1171,20 @@ export interface components {
             /** Label */
             label: string;
         };
+        /** FloorStaff */
+        FloorStaff: {
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+            /** Full Name */
+            full_name: string;
+            /** Role */
+            role: string;
+            /** Has Pin */
+            has_pin: boolean;
+        };
         /**
          * Frequency
          * @enum {string}
@@ -972,6 +1209,32 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** IdentifyRequest */
+        IdentifyRequest: {
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+            /** Pin */
+            pin: string;
+        };
+        /** IdentifyResponse */
+        IdentifyResponse: {
+            /** Actor Token */
+            actor_token: string;
+            /** Expires At */
+            expires_at: number;
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+            /** Full Name */
+            full_name: string;
+            /** Role */
+            role: string;
         };
         /**
          * InventoryUnit
@@ -1083,6 +1346,11 @@ export interface components {
              */
             allow_na: boolean;
         };
+        /**
+         * ItemResult
+         * @enum {string}
+         */
+        ItemResult: "pass" | "fail" | "na" | "pending";
         /** JobRun */
         JobRun: {
             /**
@@ -1115,6 +1383,11 @@ export interface components {
             error_detail: string | null;
             /** Triggered By Name */
             triggered_by_name: string | null;
+        };
+        /** MaterialiseRequest */
+        MaterialiseRequest: {
+            /** Business Date */
+            business_date?: string | null;
         };
         /** MeResponse */
         MeResponse: {
@@ -1220,6 +1493,18 @@ export interface components {
             role_at_outlet: components["schemas"]["UserRole"];
             /** Is Primary */
             is_primary: boolean;
+        };
+        /** PhotoConfirmRequest */
+        PhotoConfirmRequest: {
+            /** Path */
+            path: string;
+        };
+        /** PhotoUrlRequest */
+        PhotoUrlRequest: {
+            /** Content Type */
+            content_type: string;
+            /** Byte Size */
+            byte_size: number;
         };
         /** RegisterDeviceRequest */
         RegisterDeviceRequest: {
@@ -1343,6 +1628,13 @@ export interface components {
             value: unknown;
             /** Is Set */
             is_set: boolean;
+        };
+        /** SubmitRequest */
+        SubmitRequest: {
+            /** Geo Lat */
+            geo_lat?: number | null;
+            /** Geo Lng */
+            geo_lng?: number | null;
         };
         /** TemplateDetail */
         TemplateDetail: {
@@ -2575,6 +2867,313 @@ export interface operations {
             };
         };
     };
+    today_sop_runs_today_get: {
+        parameters: {
+            query: {
+                outlet_id: string;
+            };
+            header?: {
+                /** @description Required on shared-tablet sessions: the assertion from /floor/identify. */
+                "X-Actor-Token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    materialise_sop_runs_materialise_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MaterialiseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_run_sop_runs__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Required on shared-tablet sessions: the assertion from /floor/identify. */
+                "X-Actor-Token"?: string | null;
+            };
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_sop_runs__run_id__start_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Required on shared-tablet sessions: the assertion from /floor/identify. */
+                "X-Actor-Token"?: string | null;
+            };
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    answer_sop_runs__run_id__items__item_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+                /** @description Required on shared-tablet sessions: the assertion from /floor/identify. */
+                "X-Actor-Token"?: string | null;
+            };
+            path: {
+                run_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    photo_url_sop_runs__run_id__items__item_id__photo_url_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Required on shared-tablet sessions: the assertion from /floor/identify. */
+                "X-Actor-Token"?: string | null;
+            };
+            path: {
+                run_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoUrlRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    photo_confirm_sop_runs__run_id__items__item_id__photo_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Required on shared-tablet sessions: the assertion from /floor/identify. */
+                "X-Actor-Token"?: string | null;
+            };
+            path: {
+                run_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_sop_runs__run_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Required on shared-tablet sessions: the assertion from /floor/identify. */
+                "X-Actor-Token"?: string | null;
+            };
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_categories_sop_categories_get: {
         parameters: {
             query?: never;
@@ -3010,6 +3609,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Assignment"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_floor_staff_floor_staff_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FloorStaff"][];
+                };
+            };
+        };
+    };
+    identify_floor_identify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentifyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentifyResponse"];
                 };
             };
             /** @description Validation Error */

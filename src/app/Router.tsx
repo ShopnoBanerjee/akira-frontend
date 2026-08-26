@@ -16,6 +16,7 @@ import { AssignmentsPage } from "@/features/sop/templates/AssignmentsPage";
 import { TemplateBuilderPage } from "@/features/sop/templates/TemplateBuilderPage";
 import { TemplatesPage } from "@/features/sop/templates/TemplatesPage";
 import { FloorHomePage } from "@/features/floor/FloorHomePage";
+import { RunPage } from "@/features/floor/RunPage";
 import { AppShell } from "./AppShell";
 import { FloorShell } from "./FloorShell";
 
@@ -138,10 +139,9 @@ export function Router() {
   }
 
   if (pathname.startsWith("/floor")) {
+    const runMatch = /^\/floor\/run\/([0-9a-f-]{36})/.exec(pathname);
     return (
-      <FloorShell>
-        <FloorHomePage />
-      </FloorShell>
+      <FloorShell>{runMatch?.[1] ? <RunPage runId={runMatch[1]} /> : <FloorHomePage />}</FloorShell>
     );
   }
 

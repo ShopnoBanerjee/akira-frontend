@@ -14,18 +14,20 @@ import { useAuth } from "@/features/auth/AuthProvider";
 export function FloorShell({ children }: { children: ReactNode }) {
   const { me, signOut } = useAuth();
   const outlet = me?.outlets.find((o) => o.is_primary) ?? me?.outlets[0];
+  // On a shared tablet the device label names the place; the person comes from
+  // the PIN identify and is shown by the page itself.
+  const locationLabel = me?.device?.label ?? outlet?.name ?? "No outlet assigned";
+  const personLabel = me?.device ? "" : (me?.full_name ?? "");
 
   return (
     <div className="floor-shell flex h-full flex-col">
       <header className="flex items-center justify-between border-b border-akira-ink/10 bg-white px-4 py-3">
         <div>
           <Wordmark compact />
-          <p className="mt-0.5 text-[13px] font-medium text-akira-ink/70">
-            {outlet?.name ?? "No outlet assigned"}
-          </p>
+          <p className="mt-0.5 text-[13px] font-medium text-akira-ink/70">{locationLabel}</p>
         </div>
         <div className="text-right">
-          <p className="text-[13px] font-semibold">{me?.full_name}</p>
+          <p className="text-[13px] font-semibold">{personLabel}</p>
           <button
             onClick={() => void signOut()}
             className="min-h-[48px] text-xs font-semibold text-akira-blue"
