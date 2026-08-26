@@ -5,6 +5,9 @@ import { useAuth } from "@/features/auth/AuthProvider";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { ROLE_LABELS, canOpenManagement, defaultShellFor } from "@/features/auth/types";
 import { DevicesPage } from "@/features/admin/devices/DevicesPage";
+import { InventoryPage } from "@/features/admin/inventory/InventoryPage";
+import { JobsPage } from "@/features/admin/jobs/JobsPage";
+import { SettingsPage } from "@/features/admin/settings/SettingsPage";
 import { OutletsPage } from "@/features/admin/outlets/OutletsPage";
 import { UsersPage } from "@/features/admin/users/UsersPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
@@ -96,8 +99,13 @@ export function Router() {
     }
     if (redirectedFor.current === me.profile_id) return;
     redirectedFor.current = me.profile_id;
-    navigate(defaultShellFor(me.global_role));
-  }, [status, me]);
+    // Only redirect from the entry points. Sign-out resets the path to "/",
+    // so a tablet handover still routes the next person to their own shell -
+    // but someone opening a deep link like /app/settings/inventory keeps it.
+    if (pathname === "/" || pathname === "/login") {
+      navigate(defaultShellFor(me.global_role));
+    }
+  }, [status, me, pathname]);
 
   if (status === "loading") {
     return <Spinner label="Loading your account…" />;
@@ -120,6 +128,9 @@ export function Router() {
     if (pathname.startsWith("/app/settings/outlets")) page = <OutletsPage />;
     else if (pathname.startsWith("/app/settings/users")) page = <UsersPage />;
     else if (pathname.startsWith("/app/settings/devices")) page = <DevicesPage />;
+    else if (pathname.startsWith("/app/settings/inventory")) page = <InventoryPage />;
+    else if (pathname.startsWith("/app/settings/jobs")) page = <JobsPage />;
+    else if (pathname.startsWith("/app/settings")) page = <SettingsPage />;
     return <AppShell>{page}</AppShell>;
   }
 

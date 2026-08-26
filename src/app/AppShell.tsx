@@ -12,8 +12,9 @@ const NAV = [
   { label: "Outlets", to: "/app/settings/outlets", ready: true },
   { label: "People", to: "/app/settings/users", ready: true },
   { label: "Tablets", to: "/app/settings/devices", ready: true },
-  { label: "Inventory", to: "/app/settings/inventory", ready: false },
-  { label: "Settings", to: "/app/settings", ready: false },
+  { label: "Inventory", to: "/app/settings/inventory", ready: true },
+  { label: "Settings", to: "/app/settings", ready: true },
+  { label: "Job Runs", to: "/app/settings/jobs", ready: true },
 ];
 
 /** Desktop-first management shell. Sidebar, data tables, dashboards. */

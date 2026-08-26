@@ -289,6 +289,194 @@ export interface paths {
         patch: operations["update_device_devices__device_id__patch"];
         trace?: never;
     };
+    "/inventory/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Departments (count stations) */
+        get: operations["list_departments_inventory_departments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inventory/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Item categories */
+        get: operations["list_categories_inventory_categories_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inventory/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The item catalogue
+         * @description The shared catalogue. Levels are included for the outlets the caller can
+         *     see, so an outlet manager reads their own pars without seeing another
+         *     outlet's.
+         */
+        get: operations["list_items_inventory_items_get"];
+        put?: never;
+        /**
+         * Add an item to the catalogue
+         * @description Owner or operations manager. The item becomes available to every outlet;
+         *     each outlet sets its own par level.
+         */
+        post: operations["create_item_inventory_items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inventory/items/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Retire a catalogue item
+         * @description Soft delete. History and past counts keep pointing at it; it simply
+         *     stops appearing in the catalogue and on count sheets.
+         */
+        delete: operations["delete_item_inventory_items__item_id__delete"];
+        options?: never;
+        head?: never;
+        /** Edit a catalogue item */
+        patch: operations["update_item_inventory_items__item_id__patch"];
+        trace?: never;
+    };
+    "/inventory/items/{item_id}/levels/{outlet_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set an outlet's par level for an item
+         * @description An outlet manager sets levels for their own outlet; owners and
+         *     operations managers for any. is_stocked false means the outlet deliberately
+         *     does not carry the item, which is different from never having configured it.
+         */
+        put: operations["set_level_inventory_items__item_id__levels__outlet_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every setting with its current value
+         * @description The full registry, each key resolved to the value in force right now at
+         *     global scope. Grouped client-side by `group`.
+         */
+        get: operations["list_settings_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings/{key}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every value this setting has held */
+        get: operations["setting_history_settings__key__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change a setting
+         * @description Inserts a new effective-dated row rather than editing the old one, so
+         *     scoring a past period keeps using the values that were live then.
+         *
+         *     Scoring weights and bands are owner-only; the operational groups
+         *     (integrity, AI review, jobs) accept an operations manager too.
+         */
+        put: operations["set_setting_settings__key__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recent job executions
+         * @description Newest first. A gap where a scheduled job should have run is as
+         *     significant as a failure row — both mean the job did not do its work.
+         */
+        get: operations["list_job_runs_jobs_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -334,6 +522,39 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Category */
+        Category: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Label Bn */
+            label_bn: string | null;
+            /** Sort Order */
+            sort_order: number;
+        };
+        /** CreateItemRequest */
+        CreateItemRequest: {
+            /** Name */
+            name: string;
+            /** Name Bn */
+            name_bn?: string | null;
+            /**
+             * Department Id
+             * Format: uuid
+             */
+            department_id: string;
+            /** Category Id */
+            category_id?: string | null;
+            unit: components["schemas"]["InventoryUnit"];
+            /** Notes */
+            notes?: string | null;
+        };
         /** CreateOutletRequest */
         CreateOutletRequest: {
             /** Name */
@@ -360,6 +581,27 @@ export interface components {
             opened_on?: string | null;
             /** Code */
             code: string;
+        };
+        /** Department */
+        Department: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Label Bn */
+            label_bn: string | null;
+            /** Sort Order */
+            sort_order: number;
+            /**
+             * Item Count
+             * @default 0
+             */
+            item_count: number;
         };
         /** Device */
         Device: {
@@ -427,6 +669,11 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /**
+         * InventoryUnit
+         * @enum {string}
+         */
+        InventoryUnit: "piece" | "gram" | "kilogram" | "millilitre" | "litre" | "roll" | "packet" | "box" | "bottle" | "jug";
         /** InviteUserRequest */
         InviteUserRequest: {
             /**
@@ -461,6 +708,72 @@ export interface components {
             /** Detail */
             detail: string;
         };
+        /** Item */
+        Item: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Name Bn */
+            name_bn: string | null;
+            /**
+             * Department Id
+             * Format: uuid
+             */
+            department_id: string;
+            /** Department Label */
+            department_label: string;
+            /** Category Id */
+            category_id: string | null;
+            /** Category Label */
+            category_label: string | null;
+            unit: components["schemas"]["InventoryUnit"];
+            /** Notes */
+            notes: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Levels
+             * @default []
+             */
+            levels: components["schemas"]["OutletLevel"][];
+        };
+        /** JobRun */
+        JobRun: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Job Name */
+            job_name: string;
+            /** Status */
+            status: string;
+            /** Outlet Id */
+            outlet_id: string | null;
+            /** Business Date */
+            business_date: string | null;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Finished At */
+            finished_at: string | null;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /** Detail */
+            detail: {
+                [key: string]: unknown;
+            };
+            /** Error Detail */
+            error_detail: string | null;
+            /** Triggered By Name */
+            triggered_by_name: string | null;
+        };
         /** MeResponse */
         MeResponse: {
             /**
@@ -488,6 +801,24 @@ export interface components {
             /** Outlets */
             outlets: components["schemas"]["OutletSummary"][];
             device?: components["schemas"]["DeviceSummary"] | null;
+        };
+        /** OutletLevel */
+        OutletLevel: {
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** Outlet Code */
+            outlet_code: string;
+            /** Par Level */
+            par_level: number | null;
+            /** Reorder Qty */
+            reorder_qty: number | null;
+            /** Order Unit */
+            order_unit: number | null;
+            /** Is Stocked */
+            is_stocked: boolean;
         };
         /** OutletResponse */
         OutletResponse: {
@@ -563,6 +894,20 @@ export interface components {
              */
             auth_user_id: string;
         };
+        /** SetLevelRequest */
+        SetLevelRequest: {
+            /** Par Level */
+            par_level?: number | null;
+            /** Reorder Qty */
+            reorder_qty?: number | null;
+            /** Order Unit */
+            order_unit?: number | null;
+            /**
+             * Is Stocked
+             * @default true
+             */
+            is_stocked: boolean;
+        };
         /**
          * SetOutletsRequest
          * @description Replaces the whole membership set, rather than adding to it.
@@ -583,10 +928,93 @@ export interface components {
         SetRoleRequest: {
             global_role: components["schemas"]["UserRole"];
         };
+        /** SetSettingRequest */
+        SetSettingRequest: {
+            /** Value */
+            value: unknown;
+            /** Note */
+            note?: string | null;
+            /** Effective From */
+            effective_from?: string | null;
+            /** Outlet Id */
+            outlet_id?: string | null;
+        };
+        /** SettingHistoryRow */
+        SettingHistoryRow: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Scope */
+            scope: string;
+            /** Outlet Id */
+            outlet_id: string | null;
+            /** Value */
+            value: unknown;
+            /**
+             * Effective From
+             * Format: date-time
+             */
+            effective_from: string;
+            /** Note */
+            note: string | null;
+            /** Set By Name */
+            set_by_name: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * SettingView
+         * @description One setting as the admin screen shows it: definition plus current value.
+         */
+        SettingView: {
+            /** Key */
+            key: string;
+            /** Group */
+            group: string;
+            /** Type */
+            type: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description: string;
+            /** Outlet Overridable */
+            outlet_overridable: boolean;
+            /** Minimum */
+            minimum: number | null;
+            /** Maximum */
+            maximum: number | null;
+            /** Choices */
+            choices: string[];
+            /** Default */
+            default: unknown;
+            /** Value */
+            value: unknown;
+            /** Is Set */
+            is_set: boolean;
+        };
         /** UpdateDeviceRequest */
         UpdateDeviceRequest: {
             /** Label */
             label?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
+        /** UpdateItemRequest */
+        UpdateItemRequest: {
+            /** Name */
+            name?: string | null;
+            /** Name Bn */
+            name_bn?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            unit?: components["schemas"]["InventoryUnit"] | null;
+            /** Notes */
+            notes?: string | null;
             /** Is Active */
             is_active?: boolean | null;
         };
@@ -1283,6 +1711,332 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Device"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_departments_inventory_departments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Department"][];
+                };
+            };
+        };
+    };
+    list_categories_inventory_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"][];
+                };
+            };
+        };
+    };
+    list_items_inventory_items_get: {
+        parameters: {
+            query?: {
+                department_id?: string | null;
+                search?: string | null;
+                include_inactive?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Item"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_item_inventory_items_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Item"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_item_inventory_items__item_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_item_inventory_items__item_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Item"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_level_inventory_items__item_id__levels__outlet_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: string;
+                outlet_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetLevelRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Item"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_settings_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingView"][];
+                };
+            };
+        };
+    };
+    setting_history_settings__key__history_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingHistoryRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_setting_settings__key__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetSettingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_job_runs_jobs_runs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                job_name?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobRun"][];
                 };
             };
             /** @description Validation Error */

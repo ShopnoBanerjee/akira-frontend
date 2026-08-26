@@ -144,3 +144,120 @@ export function useRevokeDevice() {
     onSuccess: () => void client.invalidateQueries({ queryKey: KEYS.devices }),
   });
 }
+
+// --- Inventory ---------------------------------------------------------------
+
+export type InventoryItem = components["schemas"]["Item"];
+export type InventoryDepartment = components["schemas"]["Department"];
+export type InventoryCategory = components["schemas"]["Category"];
+export type SettingView = components["schemas"]["SettingView"];
+export type SettingHistoryRow = components["schemas"]["SettingHistoryRow"];
+export type JobRun = components["schemas"]["JobRun"];
+
+const INVENTORY_KEYS = {
+  departments: ["admin", "inventory", "departments"] as const,
+  items: ["admin", "inventory", "items"] as const,
+  settings: ["admin", "settings"] as const,
+  jobs: ["admin", "jobs"] as const,
+};
+
+export function useInventoryDepartments() {
+  return useQuery({
+    queryKey: INVENTORY_KEYS.departments,
+    queryFn: () => api.get<InventoryDepartment[]>("/inventory/departments"),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useInventoryItems(filters?: { departmentId?: string; search?: string }) {
+  const params = new URLSearchParams();
+  if (filters?.departmentId) params.set("department_id", filters.departmentId);
+  if (filters?.search) params.set("search", filters.search);
+  const suffix = params.size ? `?${params.toString()}` : "";
+  return useQuery({
+    queryKey: [...INVENTORY_KEYS.items, filters ?? {}],
+    queryFn: () => api.get<InventoryItem[]>(`/inventory/items${suffix}`),
+  });
+}
+
+export function useCreateInventoryItem() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: components["schemas"]["CreateItemRequest"]) =>
+      api.post<InventoryItem>("/inventory/items", body),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: INVENTORY_KEYS.items });
+      void client.invalidateQueries({ queryKey: INVENTORY_KEYS.departments });
+    },
+  });
+}
+
+export function useUpdateInventoryItem() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: components["schemas"]["UpdateItemRequest"] & { id: string }) =>
+      api.patch<InventoryItem>(`/inventory/items/${id}`, body),
+    onSuccess: () => void client.invalidateQueries({ queryKey: INVENTORY_KEYS.items }),
+  });
+}
+
+export function useRetireInventoryItem() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete<void>(`/inventory/items/${id}`),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: INVENTORY_KEYS.items });
+      void client.invalidateQueries({ queryKey: INVENTORY_KEYS.departments });
+    },
+  });
+}
+
+export function useSetItemLevel() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      itemId,
+      outletId,
+      ...body
+    }: components["schemas"]["SetLevelRequest"] & {
+      itemId: string;
+      outletId: string;
+    }) => api.put<InventoryItem>(`/inventory/items/${itemId}/levels/${outletId}`, body),
+    onSuccess: () => void client.invalidateQueries({ queryKey: INVENTORY_KEYS.items }),
+  });
+}
+
+// --- Settings ----------------------------------------------------------------
+
+export function useSettings() {
+  return useQuery({
+    queryKey: INVENTORY_KEYS.settings,
+    queryFn: () => api.get<SettingView[]>("/settings"),
+  });
+}
+
+export function useSettingHistory(key: string | null) {
+  return useQuery({
+    queryKey: [...INVENTORY_KEYS.settings, "history", key],
+    queryFn: () => api.get<SettingHistoryRow[]>(`/settings/${key}/history`),
+    enabled: key !== null,
+  });
+}
+
+export function useSetSetting() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ key, ...body }: components["schemas"]["SetSettingRequest"] & { key: string }) =>
+      api.put<SettingView>(`/settings/${key}`, body),
+    onSuccess: () => void client.invalidateQueries({ queryKey: INVENTORY_KEYS.settings }),
+  });
+}
+
+// --- Jobs --------------------------------------------------------------------
+
+export function useJobRuns() {
+  return useQuery({
+    queryKey: INVENTORY_KEYS.jobs,
+    queryFn: () => api.get<JobRun[]>("/jobs/runs"),
+  });
+}
