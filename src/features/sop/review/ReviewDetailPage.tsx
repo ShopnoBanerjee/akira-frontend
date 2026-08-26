@@ -254,7 +254,7 @@ function ItemRow({ item, onOpenPhoto }: { item: ReviewItem; onOpenPhoto: () => v
         {item.integrity_flags.length > 0 && (
           <div className="mt-1.5 flex flex-col gap-1.5">
             {item.integrity_flags.map((flag) => (
-              <FlagLine key={flag} flag={flag} evidence={item.integrity_detail[flag]} />
+              <FlagLine key={flag} flag={flag} evidence={evidenceFor(item, flag)} />
             ))}
           </div>
         )}
@@ -312,7 +312,7 @@ function PhotoLightbox({ item, onClose }: { item: ReviewItem | null; onClose: ()
           />
           {item.note && <p className="text-sm text-akira-ink/70">{item.note}</p>}
           {item.integrity_flags.map((flag) => (
-            <FlagLine key={flag} flag={flag} evidence={item.integrity_detail[flag]} />
+            <FlagLine key={flag} flag={flag} evidence={evidenceFor(item, flag)} />
           ))}
           {item.ai_review && <VerdictLine review={item.ai_review} />}
           <Button onClick={onClose}>Close</Button>
@@ -396,6 +396,19 @@ function RejectDialog({
       </div>
     </Dialog>
   );
+}
+
+/**
+ * The evidence to show beneath a flag chip.
+ *
+ * `ai_mismatch` is the one flag whose evidence is also about to be rendered in
+ * full by VerdictLine directly below it — model, confidence, rationale, and
+ * what it was judged against. Printing the rationale twice makes the row look
+ * like two findings when it is one.
+ */
+function evidenceFor(item: ReviewItem, flag: string): Record<string, unknown> | undefined {
+  if (flag === "ai_mismatch" && item.ai_review) return undefined;
+  return item.integrity_detail[flag];
 }
 
 /**
