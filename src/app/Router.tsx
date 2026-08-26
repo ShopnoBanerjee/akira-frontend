@@ -15,6 +15,9 @@ import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { AssignmentsPage } from "@/features/sop/templates/AssignmentsPage";
 import { TemplateBuilderPage } from "@/features/sop/templates/TemplateBuilderPage";
 import { TemplatesPage } from "@/features/sop/templates/TemplatesPage";
+import { ExceptionsPage } from "@/features/sop/review/ExceptionsPage";
+import { ReviewDetailPage } from "@/features/sop/review/ReviewDetailPage";
+import { ReviewQueuePage } from "@/features/sop/review/ReviewQueuePage";
 import { FloorHomePage } from "@/features/floor/FloorHomePage";
 import { RunPage } from "@/features/floor/RunPage";
 import { AppShell } from "./AppShell";
@@ -125,10 +128,14 @@ export function Router() {
     // silent redirect that looks like the app is broken.
     if (!isManagement) return <Forbidden intended={pathname} />;
     let page = <DashboardPage />;
+    const reviewMatch = /^\/app\/sop\/review\/([0-9a-f-]{36})/.exec(pathname);
     const builderMatch = /^\/app\/sop\/templates\/([0-9a-f-]{36})/.exec(pathname);
     if (builderMatch?.[1]) page = <TemplateBuilderPage templateId={builderMatch[1]} />;
     else if (pathname.startsWith("/app/sop/templates")) page = <TemplatesPage />;
     else if (pathname.startsWith("/app/sop/assignments")) page = <AssignmentsPage />;
+    else if (reviewMatch?.[1]) page = <ReviewDetailPage runId={reviewMatch[1]} />;
+    else if (pathname.startsWith("/app/sop/review")) page = <ReviewQueuePage />;
+    else if (pathname.startsWith("/app/sop/exceptions")) page = <ExceptionsPage />;
     else if (pathname.startsWith("/app/settings/outlets")) page = <OutletsPage />;
     else if (pathname.startsWith("/app/settings/users")) page = <UsersPage />;
     else if (pathname.startsWith("/app/settings/devices")) page = <DevicesPage />;

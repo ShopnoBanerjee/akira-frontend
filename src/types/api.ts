@@ -644,6 +644,179 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sop/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Runs for review
+         * @description Oldest submitted first — the queue rewards clearing the backlog, and
+         *     bulk approve is deliberately not offered anywhere.
+         */
+        get: operations["list_runs_sop_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/runs/{run_id}/detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A run for review, with photo view URLs
+         * @description Items with their snapshot definitions, integrity flags, and short-lived
+         *     signed photo URLs minted per request — never stored, expired in minutes.
+         */
+        get: operations["run_detail_sop_runs__run_id__detail_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/runs/{run_id}/viewed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record that the reviewer opened a photo */
+        post: operations["mark_viewed_sop_runs__run_id__viewed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/runs/{run_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve a run
+         * @description Locks the run. Refused when the approver is the submitter — here, and
+         *     again by the database CHECK if this code were ever bypassed.
+         */
+        post: operations["approve_run_sop_runs__run_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/runs/{run_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject a run back to the floor
+         * @description Back to in_progress with the reason attached. Clears results on the
+         *     named items only — the rest of the run stays done.
+         */
+        post: operations["reject_run_sop_runs__run_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/exceptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The exception board */
+        get: operations["list_exceptions_sop_exceptions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/exceptions/{exception_id}/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Acknowledge an exception */
+        post: operations["acknowledge_exception_sop_exceptions__exception_id__acknowledge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/exceptions/{exception_id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve an exception */
+        post: operations["resolve_exception_sop_exceptions__exception_id__resolve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/exceptions/{exception_id}/waive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Waive an exception (owner / ops manager)
+         * @description Waiving says "we accept this and are not fixing it" — a call above the
+         *     outlet, so it needs the network roles and always a reason.
+         */
+        post: operations["waive_exception_sop_exceptions__exception_id__waive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sop/categories": {
         parameters: {
             query?: never;
@@ -1171,6 +1344,49 @@ export interface components {
             /** Label */
             label: string;
         };
+        /** ExceptionRow */
+        ExceptionRow: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** Outlet Code */
+            outlet_code: string;
+            /**
+             * Business Date
+             * Format: date
+             */
+            business_date: string;
+            /** Severity */
+            severity: string;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+            /** Detail */
+            detail: string | null;
+            /** Photo Path */
+            photo_path: string | null;
+            /** Assigned To Name */
+            assigned_to_name: string | null;
+            /** Resolved By Name */
+            resolved_by_name: string | null;
+            /** Resolution Note */
+            resolution_note: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Age Hours */
+            age_hours: number;
+        };
         /** FloorStaff */
         FloorStaff: {
             /**
@@ -1384,6 +1600,14 @@ export interface components {
             /** Triggered By Name */
             triggered_by_name: string | null;
         };
+        /** MarkViewedRequest */
+        MarkViewedRequest: {
+            /**
+             * Item Id
+             * Format: uuid
+             */
+            item_id: string;
+        };
         /** MaterialiseRequest */
         MaterialiseRequest: {
             /** Business Date */
@@ -1506,6 +1730,48 @@ export interface components {
             /** Byte Size */
             byte_size: number;
         };
+        /** QueueRow */
+        QueueRow: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** Outlet Code */
+            outlet_code: string;
+            /** Template Name */
+            template_name: string;
+            /** Template Name Bn */
+            template_name_bn: string | null;
+            /**
+             * Business Date
+             * Format: date
+             */
+            business_date: string;
+            /** Status */
+            status: string;
+            /** Submitted By Name */
+            submitted_by_name: string | null;
+            /** Submitted At */
+            submitted_at: string | null;
+            /** Score Pct */
+            score_pct: number | null;
+            /** Critical Fail Count */
+            critical_fail_count: number;
+            /** Integrity Flag Count */
+            integrity_flag_count: number;
+            /** Is Late */
+            is_late: boolean;
+            /** Item Count */
+            item_count: number;
+            /** Fail Count */
+            fail_count: number;
+        };
         /** RegisterDeviceRequest */
         RegisterDeviceRequest: {
             /**
@@ -1521,11 +1787,28 @@ export interface components {
              */
             auth_user_id: string;
         };
+        /** RejectRequest */
+        RejectRequest: {
+            /** Reason */
+            reason: string;
+            /** Item Ids */
+            item_ids: string[];
+        };
         /** ReorderRequest */
         ReorderRequest: {
             /** Item Ids */
             item_ids: string[];
         };
+        /** ResolveRequest */
+        ResolveRequest: {
+            /** Resolution Note */
+            resolution_note: string;
+        };
+        /**
+         * RunStatus
+         * @enum {string}
+         */
+        RunStatus: "pending" | "in_progress" | "submitted" | "approved" | "rejected" | "missed";
         /** SetLevelRequest */
         SetLevelRequest: {
             /** Par Level */
@@ -1933,6 +2216,11 @@ export interface components {
          * @enum {string}
          */
         ValueType: "number" | "text" | "temperature_c" | "time";
+        /** WaiveRequest */
+        WaiveRequest: {
+            /** Reason */
+            reason: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -3160,6 +3448,322 @@ export interface operations {
                 content: {
                     "application/json": {
                         [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_runs_sop_runs_get: {
+        parameters: {
+            query?: {
+                outlet_id?: string | null;
+                status?: components["schemas"]["RunStatus"] | null;
+                from?: string | null;
+                to?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_detail_sop_runs__run_id__detail_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_viewed_sop_runs__run_id__viewed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkViewedRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_run_sop_runs__run_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_run_sop_runs__run_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_exceptions_sop_exceptions_get: {
+        parameters: {
+            query?: {
+                outlet_id?: string | null;
+                status?: string | null;
+                severity?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExceptionRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    acknowledge_exception_sop_exceptions__exception_id__acknowledge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exception_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_exception_sop_exceptions__exception_id__resolve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exception_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    waive_exception_sop_exceptions__exception_id__waive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exception_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WaiveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
                     };
                 };
             };

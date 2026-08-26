@@ -7,8 +7,8 @@ import { ROLE_LABELS } from "@/features/auth/types";
 const NAV = [
   { label: "Dashboard", to: "/app", ready: true },
   { label: "SOP Templates", to: "/app/sop/templates", ready: true },
-  { label: "Review Queue", to: "/app/sop/review", ready: false },
-  { label: "Exceptions", to: "/app/sop/exceptions", ready: false },
+  { label: "Review Queue", to: "/app/sop/review", ready: true },
+  { label: "Exceptions", to: "/app/sop/exceptions", ready: true },
   { label: "Assignments", to: "/app/sop/assignments", ready: true },
   { label: "Outlets", to: "/app/settings/outlets", ready: true },
   { label: "People", to: "/app/settings/users", ready: true },
