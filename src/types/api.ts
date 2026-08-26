@@ -32,6 +32,161 @@ export interface paths {
         patch: operations["update_me_users_me_patch"];
         trace?: never;
     };
+    "/users/roles/grantable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Roles you may assign
+         * @description What the signed-in user may grant, plus a plain-language reason for each
+         *     role they may not. The UI disables the rest with the reason attached rather
+         *     than omitting them — a rule you cannot see is a rule you will argue with.
+         */
+        get: operations["get_grantable_roles_users_roles_grantable_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * People you can administer
+         * @description Owners and operations managers see everyone. An outlet manager sees only
+         *     people in their own outlets.
+         */
+        get: operations["list_users_users_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Invite someone
+         * @description Supabase sends the invitation and owns the token, so no password is ever
+         *     handled here.
+         *
+         *     You can never grant a role at or above your own. An existing address is not
+         *     an error: that person keeps the login they already have.
+         */
+        post: operations["invite_user_users_invite_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One person */
+        get: operations["get_user_users__profile_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update someone's details
+         * @description Deactivating the last active owner is refused: it would lock everyone out
+         *     of outlet and user administration permanently.
+         */
+        patch: operations["update_user_users__profile_id__patch"];
+        trace?: never;
+    };
+    "/users/{profile_id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change someone's role
+         * @description Outlet roles follow the global role, so the two cannot silently disagree.
+         */
+        put: operations["set_user_role_users__profile_id__role_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{profile_id}/outlets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace someone's outlets
+         * @description Replaces the whole set. The first outlet becomes their primary.
+         */
+        put: operations["set_user_outlets_users__profile_id__outlets_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{profile_id}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set or clear a shared-tablet PIN
+         * @description A PIN attributes floor work on a shared tablet to a real person. It
+         *     authorises floor actions only, can never approve a run, and is only accepted
+         *     on a device already bound to that person's outlet.
+         *
+         *     Sending `null` clears it, which is how a departing staff member comes off
+         *     the tablet without losing their history. Only shift leads and staff may
+         *     have one.
+         */
+        put: operations["set_user_pin_users__profile_id__pin_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/outlets": {
         parameters: {
             query?: never;
@@ -41,12 +196,16 @@ export interface paths {
         };
         /**
          * Outlets you can see
-         * @description Owners and ops managers see every outlet. Everyone else sees only the
-         *     outlets they are a member of.
+         * @description Owners and operations managers see every outlet. Everyone else sees only
+         *     the outlets they belong to.
          */
         get: operations["list_outlets_outlets_get"];
         put?: never;
-        post?: never;
+        /**
+         * Create an outlet
+         * @description Owner only. The code must be unique and is fixed once created.
+         */
+        post: operations["create_outlet_outlets_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -60,18 +219,74 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * One outlet
-         * @description Re-checks access against the id rather than trusting that possession of
-         *     an id implies permission — the fetch-by-id IDOR.
-         */
+        /** One outlet */
         get: operations["get_outlet_outlets__outlet_id__get"];
         put?: never;
         post?: never;
+        /**
+         * Close an outlet
+         * @description Owner only. A soft delete: history is kept, the outlet stops appearing.
+         *
+         *     Refused with 409 while any checklist run is still pending, in progress or
+         *     awaiting review — closing the outlet under them would strand work someone
+         *     is in the middle of.
+         */
+        delete: operations["delete_outlet_outlets__outlet_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update an outlet
+         * @description Owner only. Changes only the fields present in the body. The code cannot
+         *     be changed — it appears in exports and printed sheets.
+         */
+        patch: operations["update_outlet_outlets__outlet_id__patch"];
+        trace?: never;
+    };
+    "/devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Registered tablets */
+        get: operations["list_devices_devices_get"];
+        put?: never;
+        /**
+         * Register a tablet
+         * @description Owner only. Binds an existing Supabase auth account to one outlet.
+         *
+         *     The account itself is created out of band, so this API never mints or
+         *     transports a credential.
+         */
+        post: operations["register_device_devices_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/devices/{device_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke a tablet
+         * @description Owner only. Use this the moment a tablet goes missing: it stops that
+         *     account reaching any outlet data, without touching the runs it already
+         *     recorded.
+         */
+        delete: operations["revoke_device_devices__device_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename or suspend a tablet */
+        patch: operations["update_device_devices__device_id__patch"];
         trace?: never;
     };
     "/healthz": {
@@ -119,6 +334,61 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** CreateOutletRequest */
+        CreateOutletRequest: {
+            /** Name */
+            name: string;
+            /** Address Line */
+            address_line?: string | null;
+            /** City */
+            city?: string | null;
+            /** Geo Lat */
+            geo_lat?: number | null;
+            /** Geo Lng */
+            geo_lng?: number | null;
+            /**
+             * Geofence Radius M
+             * @default 150
+             */
+            geofence_radius_m: number;
+            /**
+             * Timezone
+             * @default Asia/Kolkata
+             */
+            timezone: string;
+            /** Opened On */
+            opened_on?: string | null;
+            /** Code */
+            code: string;
+        };
+        /** Device */
+        Device: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** Outlet Code */
+            outlet_code: string;
+            /** Outlet Name */
+            outlet_name: string;
+            /** Label */
+            label: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Last Seen At */
+            last_seen_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /**
          * DeviceSummary
          * @description Present only when the caller is a shared outlet tablet.
@@ -137,10 +407,59 @@ export interface components {
             /** Label */
             label: string;
         };
+        /**
+         * GrantableRolesResponse
+         * @description What the signed-in user may assign, so the UI can disable the rest with
+         *     an explanation instead of hiding it.
+         */
+        GrantableRolesResponse: {
+            /** Grantable */
+            grantable: components["schemas"]["UserRole"][];
+            /** All Roles */
+            all_roles: components["schemas"]["UserRole"][];
+            /** Reasons */
+            reasons: {
+                [key: string]: string;
+            };
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** InviteUserRequest */
+        InviteUserRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Full Name */
+            full_name: string;
+            global_role: components["schemas"]["UserRole"];
+            /** Outlet Ids */
+            outlet_ids: string[];
+            /** Employee Code */
+            employee_code?: string | null;
+            /** Phone */
+            phone?: string | null;
+        };
+        /** InviteUserResponse */
+        InviteUserResponse: {
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Invite Sent */
+            invite_sent: boolean;
+            /** Detail */
+            detail: string;
         };
         /** MeResponse */
         MeResponse: {
@@ -170,8 +489,30 @@ export interface components {
             outlets: components["schemas"]["OutletSummary"][];
             device?: components["schemas"]["DeviceSummary"] | null;
         };
-        /** Outlet */
-        Outlet: {
+        /** OutletResponse */
+        OutletResponse: {
+            /** Name */
+            name: string;
+            /** Address Line */
+            address_line?: string | null;
+            /** City */
+            city?: string | null;
+            /** Geo Lat */
+            geo_lat?: number | null;
+            /** Geo Lng */
+            geo_lng?: number | null;
+            /**
+             * Geofence Radius M
+             * @default 150
+             */
+            geofence_radius_m: number;
+            /**
+             * Timezone
+             * @default Asia/Kolkata
+             */
+            timezone: string;
+            /** Opened On */
+            opened_on?: string | null;
             /**
              * Id
              * Format: uuid
@@ -179,20 +520,18 @@ export interface components {
             id: string;
             /** Code */
             code: string;
-            /** Name */
-            name: string;
-            /** City */
-            city: string | null;
-            /** Timezone */
-            timezone: string;
-            /** Geo Lat */
-            geo_lat: number | null;
-            /** Geo Lng */
-            geo_lng: number | null;
-            /** Geofence Radius M */
-            geofence_radius_m: number;
             /** Is Active */
             is_active: boolean;
+            /**
+             * Member Count
+             * @default 0
+             */
+            member_count: number;
+            /**
+             * Device Count
+             * @default 0
+             */
+            device_count: number;
         };
         /** OutletSummary */
         OutletSummary: {
@@ -209,6 +548,48 @@ export interface components {
             /** Is Primary */
             is_primary: boolean;
         };
+        /** RegisterDeviceRequest */
+        RegisterDeviceRequest: {
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** Label */
+            label: string;
+            /**
+             * Auth User Id
+             * Format: uuid
+             */
+            auth_user_id: string;
+        };
+        /**
+         * SetOutletsRequest
+         * @description Replaces the whole membership set, rather than adding to it.
+         *
+         *     A replace makes the resulting state obvious from the request. An add/remove
+         *     pair leaves the caller guessing what the person ended up with.
+         */
+        SetOutletsRequest: {
+            /** Outlet Ids */
+            outlet_ids: string[];
+        };
+        /** SetPinRequest */
+        SetPinRequest: {
+            /** Pin */
+            pin?: string | null;
+        };
+        /** SetRoleRequest */
+        SetRoleRequest: {
+            global_role: components["schemas"]["UserRole"];
+        };
+        /** UpdateDeviceRequest */
+        UpdateDeviceRequest: {
+            /** Label */
+            label?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
         /**
          * UpdateMeRequest
          * @description Only what a person may change about themselves.
@@ -221,6 +602,73 @@ export interface components {
             full_name?: string | null;
             /** Phone */
             phone?: string | null;
+        };
+        /**
+         * UpdateOutletRequest
+         * @description Every field optional: a PATCH changes only what it names.
+         *
+         *     `code` is absent on purpose. It appears in exports, conversation and
+         *     printed sheets, so renaming it silently would break references nobody is
+         *     tracking.
+         */
+        UpdateOutletRequest: {
+            /** Name */
+            name?: string | null;
+            /** Address Line */
+            address_line?: string | null;
+            /** City */
+            city?: string | null;
+            /** Geo Lat */
+            geo_lat?: number | null;
+            /** Geo Lng */
+            geo_lng?: number | null;
+            /** Geofence Radius M */
+            geofence_radius_m?: number | null;
+            /** Timezone */
+            timezone?: string | null;
+            /** Opened On */
+            opened_on?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
+        /** UpdateUserRequest */
+        UpdateUserRequest: {
+            /** Full Name */
+            full_name?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Employee Code */
+            employee_code?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
+        /**
+         * UserListItem
+         * @description A person as they appear in the admin table.
+         */
+        UserListItem: {
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+            /** Full Name */
+            full_name: string;
+            /** Email */
+            email: string | null;
+            /** Phone */
+            phone: string | null;
+            /** Employee Code */
+            employee_code: string | null;
+            global_role: components["schemas"]["UserRole"];
+            /** Is Active */
+            is_active: boolean;
+            /** Has Pin */
+            has_pin: boolean;
+            /** Last Seen At */
+            last_seen_at: string | null;
+            /** Outlets */
+            outlets: components["schemas"]["OutletSummary"][];
         };
         /**
          * UserRole
@@ -302,7 +750,7 @@ export interface operations {
             };
         };
     };
-    list_outlets_outlets_get: {
+    get_grantable_roles_users_roles_grantable_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -317,7 +765,310 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Outlet"][];
+                    "application/json": components["schemas"]["GrantableRolesResponse"];
+                };
+            };
+        };
+    };
+    list_users_users_get: {
+        parameters: {
+            query?: {
+                outlet_id?: string | null;
+                role?: components["schemas"]["UserRole"] | null;
+                is_active?: boolean | null;
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserListItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    invite_user_users_invite_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteUserRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InviteUserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_users__profile_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserListItem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_user_users__profile_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserListItem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_user_role_users__profile_id__role_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserListItem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_user_outlets_users__profile_id__outlets_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetOutletsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserListItem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_user_pin_users__profile_id__pin_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPinRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserListItem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_outlets_outlets_get: {
+        parameters: {
+            query?: {
+                /** @description Include outlets that have been deactivated. */
+                include_inactive?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutletResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_outlet_outlets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOutletRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutletResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -339,7 +1090,199 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Outlet"];
+                    "application/json": components["schemas"]["OutletResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_outlet_outlets__outlet_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                outlet_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_outlet_outlets__outlet_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                outlet_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOutletRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutletResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_devices_devices_get: {
+        parameters: {
+            query?: {
+                outlet_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Device"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_device_devices_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterDeviceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Device"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_device_devices__device_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_device_devices__device_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                device_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDeviceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Device"];
                 };
             };
             /** @description Validation Error */

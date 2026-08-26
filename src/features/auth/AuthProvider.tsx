@@ -1,6 +1,7 @@
 import { createContext, use, useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { ApiError, api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
@@ -27,6 +28,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [session, setSession] = useState<Session | null>(null);
   const [me, setMe] = useState<Me | null>(null);
@@ -77,6 +79,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(next);
       // TOKEN_REFRESHED fires often and changes nothing about who this is.
       if (event === "TOKEN_REFRESHED") return;
+      // The tablet is shared. Whatever the previous person's queries cached
+      // must never be shown to the next person, in either direction - a
+      // manager's outlet list surviving into a staff session is a data leak.
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        queryClient.clear();
+      }
       setStatus("loading");
       void loadProfile(next);
     });
@@ -85,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       active = false;
       subscription.unsubscribe();
     };
-  }, [loadProfile]);
+  }, [loadProfile, queryClient]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -94,13 +102,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
+    queryClient.clear();
     setMe(null);
     setPendingReason(null);
     setStatus("signed-out");
     // Clear the path too. On a shared tablet the next person must not inherit
     // where the last one happened to be.
     window.history.replaceState({}, "", "/");
-  }, []);
+  }, [queryClient]);
 
   const refresh = useCallback(async () => {
     const { data } = await supabase.auth.getSession();

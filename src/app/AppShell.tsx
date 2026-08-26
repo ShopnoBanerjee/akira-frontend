@@ -9,9 +9,10 @@ const NAV = [
   { label: "SOP Templates", to: "/app/sop/templates", ready: false },
   { label: "Review Queue", to: "/app/sop/review", ready: false },
   { label: "Exceptions", to: "/app/sop/exceptions", ready: false },
+  { label: "Outlets", to: "/app/settings/outlets", ready: true },
+  { label: "People", to: "/app/settings/users", ready: true },
+  { label: "Tablets", to: "/app/settings/devices", ready: true },
   { label: "Inventory", to: "/app/settings/inventory", ready: false },
-  { label: "Outlets", to: "/app/settings/outlets", ready: false },
-  { label: "Users", to: "/app/settings/users", ready: false },
   { label: "Settings", to: "/app/settings", ready: false },
 ];
 
@@ -32,6 +33,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               key={item.to}
               href={item.ready ? item.to : undefined}
               aria-disabled={!item.ready}
+              onClick={(e) => {
+                if (!item.ready) return;
+                e.preventDefault();
+                window.history.pushState({}, "", item.to);
+                window.dispatchEvent(new PopStateEvent("popstate"));
+              }}
               title={item.ready ? undefined : "Arrives in a later epic"}
               className={
                 "flex items-center justify-between rounded-md px-3 py-2 text-sm " +

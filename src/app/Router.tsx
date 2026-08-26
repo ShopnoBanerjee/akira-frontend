@@ -4,6 +4,9 @@ import { Spinner, Wordmark } from "@/components/Brand";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { ROLE_LABELS, canOpenManagement, defaultShellFor } from "@/features/auth/types";
+import { DevicesPage } from "@/features/admin/devices/DevicesPage";
+import { OutletsPage } from "@/features/admin/outlets/OutletsPage";
+import { UsersPage } from "@/features/admin/users/UsersPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { FloorHomePage } from "@/features/floor/FloorHomePage";
 import { AppShell } from "./AppShell";
@@ -113,11 +116,11 @@ export function Router() {
     // A shift lead or staff member reaching /app gets an explanation, not a
     // silent redirect that looks like the app is broken.
     if (!isManagement) return <Forbidden intended={pathname} />;
-    return (
-      <AppShell>
-        <DashboardPage />
-      </AppShell>
-    );
+    let page = <DashboardPage />;
+    if (pathname.startsWith("/app/settings/outlets")) page = <OutletsPage />;
+    else if (pathname.startsWith("/app/settings/users")) page = <UsersPage />;
+    else if (pathname.startsWith("/app/settings/devices")) page = <DevicesPage />;
+    return <AppShell>{page}</AppShell>;
   }
 
   if (pathname.startsWith("/floor")) {
