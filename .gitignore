@@ -1,0 +1,32 @@
+# Build output
+dist/
+dist-ssr/
+*.local
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment — .env.example carries the browser-safe defaults
+.env
+.env.local
+.env.*.local
+
+# Tooling caches
+.eslintcache
+coverage/
+node_modules/.tmp/
+*.tsbuildinfo
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

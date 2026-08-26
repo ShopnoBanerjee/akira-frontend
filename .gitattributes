@@ -1,0 +1,15 @@
+# Normalise line endings so Windows and CI agree.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.woff binary
+*.woff2 binary
+*.xlsx binary
+*.pdf binary
+
+# Generated — collapse in diffs and exclude from language stats.
+pnpm-lock.yaml linguist-generated=true -diff
+src/types/api.ts linguist-generated=true -diff
+openapi.json linguist-generated=true -diff

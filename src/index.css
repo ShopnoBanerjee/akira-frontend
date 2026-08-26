@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   AKIRA brand tokens.
+
+   Flat colour, no gradients. Red is reserved for the primary action and the
+   red health band — never for chrome. See CLAUDE.md.
+   --------------------------------------------------------------------------- */
+@theme {
+  /* Brand */
+  --color-akira-red: #ee3345;
+  --color-akira-blue: #326fb7;
+  --color-akira-ink: #231f20;
+
+  /* Outlet health bands */
+  --color-health-green: #2f9e5f;
+  --color-health-amber: #e0a020;
+  --color-health-red: #ee3345;
+
+  /* Typography */
+  --font-sans: "Noto Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-jp: "Noto Sans JP", "Noto Sans", sans-serif;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #ffffff;
+  color: var(--color-akira-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The floor shell is used one-handed on a shared tablet in a bright kitchen.
+   Never let a stray tap select text or trigger a zoom. */
+.floor-shell {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
