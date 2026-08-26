@@ -69,7 +69,7 @@ actions only and can never approve a run.
 operational checklist documents (Kitchen Cleaning, Mise-en-place, Housekeeping,
 FNB Hot Range, FNB Service, FNB Desserts, Beverages).
 
-**Why:** the spec itself says that if real SOP documentation exists it _is_ the
+**Why:** the spec itself says that if real SOP documentation exists it *is* the
 seed data and should replace section 4.4's invented templates. Staff recognise
 their own checklists; they will not recognise plausible-sounding substitutes.
 
@@ -79,15 +79,31 @@ E1 extracts templates from the real documents instead, mapping each line to
 warning applies during extraction — long paper checklists should be split by
 day-part rather than seeded whole.
 
+## D5 — Supabase JWTs are ES256, verified against JWKS
+
+**Decided 26 Aug 2026.** The project's JWKS endpoint serves a single ES256
+elliptic-curve public key. Supabase signs asymmetrically here; there is no
+legacy HS256 shared secret.
+
+**Why:** verified directly against the live endpoint at kickoff, not assumed.
+
+**Consequences:** `app/core/security.py` (P2) verifies with the public key set
+fetched from `SUPABASE_JWKS_URL`, caching it and refreshing on a `kid` miss.
+Never configure or expect a symmetric `SUPABASE_JWT_SECRET`. Environment
+variables use Supabase's current names — `SUPABASE_SECRET_KEY` and
+`SUPABASE_JWKS_URL` — rather than the older `SUPABASE_SERVICE_KEY` and
+`SUPABASE_ANON_KEY` the spec's prompt pack references.
+
 ---
 
 ## Assumptions in force — challenge these if wrong
 
-- **A1 — `ops_manager` approves outlet-manager submissions.** Spec open question 5. Without a named approver above the outlet manager, the separation-of-duties
+- **A1 — `ops_manager` approves outlet-manager submissions.** Spec open question
+  5. Without a named approver above the outlet manager, the separation-of-duties
   constraint blocks the real closing-checklist workflow.
 - **A2 — Petpooja is manual XLSX upload for all of Stage 1.** Spec open question
   1. `api_source.py` ships as a documented stub. Revisit when the vendor's API
-     pricing is known.
+  pricing is known.
 - **A3 — Email only for Stage 1 notifications.** Spec open question 6. The
   `Notifier` interface is pluggable so a WhatsApp implementation is additive.
 - **A4 — Outlet 2 timeline is unknown**, so the dev seed carries a second dummy
