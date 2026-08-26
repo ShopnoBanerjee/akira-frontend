@@ -4,6 +4,76 @@
  */
 
 export interface paths {
+    "/users/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The signed-in user
+         * @description Profile, global role and outlet memberships for the current session.
+         *
+         *     The client uses this to decide which shell to render, so it is the first
+         *     call after sign-in.
+         */
+        get: operations["read_me_users_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update your own details
+         * @description Change your own name or phone. Role, outlets and activation are not
+         *     editable here — those are administrative actions.
+         */
+        patch: operations["update_me_users_me_patch"];
+        trace?: never;
+    };
+    "/outlets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Outlets you can see
+         * @description Owners and ops managers see every outlet. Everyone else sees only the
+         *     outlets they are a member of.
+         */
+        get: operations["list_outlets_outlets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/outlets/{outlet_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One outlet
+         * @description Re-checks access against the id rather than trusting that possession of
+         *     an id implies permission — the fetch-by-id IDOR.
+         */
+        get: operations["get_outlet_outlets__outlet_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -24,10 +94,153 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/readyz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Readyz
+         * @description Readiness probe. Unlike /healthz this does check the database, because a
+         *     process that cannot reach Postgres is running but not serving.
+         */
+        get: operations["readyz_readyz_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: never;
+    schemas: {
+        /**
+         * DeviceSummary
+         * @description Present only when the caller is a shared outlet tablet.
+         */
+        DeviceSummary: {
+            /**
+             * Device Id
+             * Format: uuid
+             */
+            device_id: string;
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** Label */
+            label: string;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** MeResponse */
+        MeResponse: {
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+            /** Full Name */
+            full_name: string;
+            /** Email */
+            email: string | null;
+            /** Phone */
+            phone: string | null;
+            /** Employee Code */
+            employee_code: string | null;
+            global_role: components["schemas"]["UserRole"];
+            /** Is Active */
+            is_active: boolean;
+            /** Is Management */
+            is_management: boolean;
+            /** Is Global */
+            is_global: boolean;
+            /** Has Pin */
+            has_pin: boolean;
+            /** Outlets */
+            outlets: components["schemas"]["OutletSummary"][];
+            device?: components["schemas"]["DeviceSummary"] | null;
+        };
+        /** Outlet */
+        Outlet: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** City */
+            city: string | null;
+            /** Timezone */
+            timezone: string;
+            /** Geo Lat */
+            geo_lat: number | null;
+            /** Geo Lng */
+            geo_lng: number | null;
+            /** Geofence Radius M */
+            geofence_radius_m: number;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** OutletSummary */
+        OutletSummary: {
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            role_at_outlet: components["schemas"]["UserRole"];
+            /** Is Primary */
+            is_primary: boolean;
+        };
+        /**
+         * UpdateMeRequest
+         * @description Only what a person may change about themselves.
+         *
+         *     Role, outlets and activation are deliberately absent: allowing them here
+         *     would let anyone promote themselves through their own profile.
+         */
+        UpdateMeRequest: {
+            /** Full Name */
+            full_name?: string | null;
+            /** Phone */
+            phone?: string | null;
+        };
+        /**
+         * UserRole
+         * @enum {string}
+         */
+        UserRole: "owner" | "ops_manager" | "outlet_manager" | "shift_lead" | "staff";
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
+        };
+    };
     responses: never;
     parameters: never;
     requestBodies: never;
@@ -36,7 +249,133 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    read_me_users_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+        };
+    };
+    update_me_users_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_outlets_outlets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Outlet"][];
+                };
+            };
+        };
+    };
+    get_outlet_outlets__outlet_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                outlet_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Outlet"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     healthz_healthz_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    readyz_readyz_get: {
         parameters: {
             query?: never;
             header?: never;
