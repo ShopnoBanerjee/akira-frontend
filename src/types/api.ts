@@ -477,6 +477,190 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sop/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** SOP categories */
+        get: operations["list_categories_sop_categories_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Checklist templates */
+        get: operations["list_templates_sop_templates_get"];
+        put?: never;
+        /** Create a template */
+        post: operations["create_template_sop_templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/templates/{template_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One template with its items */
+        get: operations["get_template_sop_templates__template_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Edit template details
+         * @description Name, category, frequency, day part, active flag. None of these bumps
+         *     the version — only item changes are material.
+         */
+        patch: operations["update_template_sop_templates__template_id__patch"];
+        trace?: never;
+    };
+    "/sop/templates/{template_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate a template
+         * @description A fresh version-1 copy, inactive and unassigned, ready to edit.
+         */
+        post: operations["duplicate_template_sop_templates__template_id__duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/templates/{template_id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add an item
+         * @description Bumps the template version and snapshots every item, in one transaction.
+         */
+        post: operations["add_item_sop_templates__template_id__items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/templates/{template_id}/items/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove an item
+         * @description Hard delete only if no run has ever answered against it; otherwise a
+         *     soft delete that keeps history renderable.
+         */
+        delete: operations["delete_item_sop_templates__template_id__items__item_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Edit an item
+         * @description Every field here is material: the edit bumps the version, and runs
+         *     recorded before it keep rendering the old definition.
+         */
+        patch: operations["update_item_sop_templates__template_id__items__item_id__patch"];
+        trace?: never;
+    };
+    "/sop/templates/{template_id}/items/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Reorder items
+         * @description Takes every current item id in the new order. Partial lists are refused
+         *     rather than silently dropping the forgotten items.
+         */
+        put: operations["reorder_items_sop_templates__template_id__items_reorder_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Template-to-outlet assignments */
+        get: operations["list_assignments_sop_assignments_get"];
+        put?: never;
+        /** Assign a template to an outlet */
+        post: operations["create_assignment_sop_assignments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/assignments/{assignment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove an assignment
+         * @description Soft delete. Runs already materialised from it are untouched; no new
+         *     ones are created.
+         */
+        delete: operations["delete_assignment_sop_assignments__assignment_id__delete"];
+        options?: never;
+        head?: never;
+        /** Edit an assignment */
+        patch: operations["update_assignment_sop_assignments__assignment_id__patch"];
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -522,6 +706,42 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Assignment */
+        Assignment: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Template Id
+             * Format: uuid
+             */
+            template_id: string;
+            /** Template Name */
+            template_name: string;
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** Outlet Code */
+            outlet_code: string;
+            assigned_role: components["schemas"]["UserRole"];
+            /** Active Weekdays */
+            active_weekdays: number[];
+            /** Interval Days */
+            interval_days: number | null;
+            /**
+             * Due Time Local
+             * Format: time
+             */
+            due_time_local: string;
+            /** Grace Minutes */
+            grace_minutes: number;
+            /** Is Active */
+            is_active: boolean;
+        };
         /** Category */
         Category: {
             /**
@@ -537,6 +757,63 @@ export interface components {
             label_bn: string | null;
             /** Sort Order */
             sort_order: number;
+        };
+        /** CategoryOut */
+        CategoryOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Label Bn */
+            label_bn: string | null;
+            /** Sort Order */
+            sort_order: number;
+            /** Icon */
+            icon: string | null;
+        };
+        /** CreateAssignmentRequest */
+        CreateAssignmentRequest: {
+            /**
+             * Template Id
+             * Format: uuid
+             */
+            template_id: string;
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            assigned_role: components["schemas"]["UserRole"];
+            /**
+             * Active Weekdays
+             * @default [
+             *       0,
+             *       1,
+             *       2,
+             *       3,
+             *       4,
+             *       5,
+             *       6
+             *     ]
+             */
+            active_weekdays: number[];
+            /** Interval Days */
+            interval_days?: number | null;
+            /**
+             * Due Time Local
+             * Format: time
+             */
+            due_time_local: string;
+            /**
+             * Grace Minutes
+             * @default 30
+             */
+            grace_minutes: number;
         };
         /** CreateItemRequest */
         CreateItemRequest: {
@@ -582,6 +859,28 @@ export interface components {
             /** Code */
             code: string;
         };
+        /** CreateTemplateRequest */
+        CreateTemplateRequest: {
+            /** Name */
+            name: string;
+            /** Name Bn */
+            name_bn?: string | null;
+            /** Description */
+            description?: string | null;
+            /**
+             * Category Id
+             * Format: uuid
+             */
+            category_id: string;
+            frequency: components["schemas"]["Frequency"];
+            /** @default any */
+            day_part: components["schemas"]["DayPart"];
+        };
+        /**
+         * DayPart
+         * @enum {string}
+         */
+        DayPart: "opening" | "mid" | "closing" | "any";
         /** Department */
         Department: {
             /**
@@ -649,6 +948,11 @@ export interface components {
             /** Label */
             label: string;
         };
+        /**
+         * Frequency
+         * @enum {string}
+         */
+        Frequency: "per_shift" | "daily" | "alternate_day" | "weekly" | "fortnightly" | "monthly";
         /**
          * GrantableRolesResponse
          * @description What the signed-in user may assign, so the UI can disable the rest with
@@ -740,6 +1044,44 @@ export interface components {
              * @default []
              */
             levels: components["schemas"]["OutletLevel"][];
+        };
+        /** ItemFields */
+        ItemFields: {
+            /** Title */
+            title: string;
+            /** Title Bn */
+            title_bn?: string | null;
+            /** Instruction */
+            instruction?: string | null;
+            /** Instruction Bn */
+            instruction_bn?: string | null;
+            /**
+             * Requires Photo
+             * @default false
+             */
+            requires_photo: boolean;
+            /**
+             * Requires Value
+             * @default false
+             */
+            requires_value: boolean;
+            value_type?: components["schemas"]["ValueType"] | null;
+            /** Value Min */
+            value_min?: number | null;
+            /** Value Max */
+            value_max?: number | null;
+            /** Value Unit */
+            value_unit?: string | null;
+            /**
+             * Is Critical
+             * @default false
+             */
+            is_critical: boolean;
+            /**
+             * Allow Na
+             * @default false
+             */
+            allow_na: boolean;
         };
         /** JobRun */
         JobRun: {
@@ -894,6 +1236,11 @@ export interface components {
              */
             auth_user_id: string;
         };
+        /** ReorderRequest */
+        ReorderRequest: {
+            /** Item Ids */
+            item_ids: string[];
+        };
         /** SetLevelRequest */
         SetLevelRequest: {
             /** Par Level */
@@ -997,6 +1344,129 @@ export interface components {
             /** Is Set */
             is_set: boolean;
         };
+        /** TemplateDetail */
+        TemplateDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Name Bn */
+            name_bn: string | null;
+            /** Description */
+            description: string | null;
+            /**
+             * Category Id
+             * Format: uuid
+             */
+            category_id: string;
+            /** Category Key */
+            category_key: string;
+            /** Category Label */
+            category_label: string;
+            frequency: components["schemas"]["Frequency"];
+            day_part: components["schemas"]["DayPart"];
+            /** Version */
+            version: number;
+            /** Is Active */
+            is_active: boolean;
+            /** Item Count */
+            item_count: number;
+            /** Critical Count */
+            critical_count: number;
+            /** Assignment Count */
+            assignment_count: number;
+            /** Items */
+            items: components["schemas"]["TemplateItem"][];
+            /** Warnings */
+            warnings: string[];
+        };
+        /** TemplateItem */
+        TemplateItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Sort Order */
+            sort_order: number;
+            /** Title */
+            title: string;
+            /** Title Bn */
+            title_bn: string | null;
+            /** Instruction */
+            instruction: string | null;
+            /** Instruction Bn */
+            instruction_bn: string | null;
+            /** Reference Photo Path */
+            reference_photo_path: string | null;
+            /** Requires Photo */
+            requires_photo: boolean;
+            /** Requires Value */
+            requires_value: boolean;
+            value_type: components["schemas"]["ValueType"] | null;
+            /** Value Min */
+            value_min: number | null;
+            /** Value Max */
+            value_max: number | null;
+            /** Value Unit */
+            value_unit: string | null;
+            /** Is Critical */
+            is_critical: boolean;
+            /** Allow Na */
+            allow_na: boolean;
+        };
+        /** TemplateSummary */
+        TemplateSummary: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Name Bn */
+            name_bn: string | null;
+            /** Description */
+            description: string | null;
+            /**
+             * Category Id
+             * Format: uuid
+             */
+            category_id: string;
+            /** Category Key */
+            category_key: string;
+            /** Category Label */
+            category_label: string;
+            frequency: components["schemas"]["Frequency"];
+            day_part: components["schemas"]["DayPart"];
+            /** Version */
+            version: number;
+            /** Is Active */
+            is_active: boolean;
+            /** Item Count */
+            item_count: number;
+            /** Critical Count */
+            critical_count: number;
+            /** Assignment Count */
+            assignment_count: number;
+        };
+        /** UpdateAssignmentRequest */
+        UpdateAssignmentRequest: {
+            assigned_role?: components["schemas"]["UserRole"] | null;
+            /** Active Weekdays */
+            active_weekdays?: number[] | null;
+            /** Interval Days */
+            interval_days?: number | null;
+            /** Due Time Local */
+            due_time_local?: string | null;
+            /** Grace Minutes */
+            grace_minutes?: number | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
         /** UpdateDeviceRequest */
         UpdateDeviceRequest: {
             /** Label */
@@ -1059,6 +1529,56 @@ export interface components {
             /** Is Active */
             is_active?: boolean | null;
         };
+        /**
+         * UpdateTemplateItemRequest
+         * @description Partial edit. Every field here is material (D11): changing any of them
+         *     bumps the template version so history keeps rendering what was true.
+         */
+        UpdateTemplateItemRequest: {
+            /** Title */
+            title?: string | null;
+            /** Title Bn */
+            title_bn?: string | null;
+            /** Instruction */
+            instruction?: string | null;
+            /** Instruction Bn */
+            instruction_bn?: string | null;
+            /** Requires Photo */
+            requires_photo?: boolean | null;
+            /** Requires Value */
+            requires_value?: boolean | null;
+            value_type?: components["schemas"]["ValueType"] | null;
+            /** Value Min */
+            value_min?: number | null;
+            /** Value Max */
+            value_max?: number | null;
+            /** Value Unit */
+            value_unit?: string | null;
+            /** Is Critical */
+            is_critical?: boolean | null;
+            /** Allow Na */
+            allow_na?: boolean | null;
+        };
+        /**
+         * UpdateTemplateRequest
+         * @description Template-level fields only. None of these is a material change, so none
+         *     bumps the version — the items are the contract with history, not the
+         *     label on the folder.
+         */
+        UpdateTemplateRequest: {
+            /** Name */
+            name?: string | null;
+            /** Name Bn */
+            name_bn?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            frequency?: components["schemas"]["Frequency"] | null;
+            day_part?: components["schemas"]["DayPart"] | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
         /** UpdateUserRequest */
         UpdateUserRequest: {
             /** Full Name */
@@ -1116,6 +1636,11 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /**
+         * ValueType
+         * @enum {string}
+         */
+        ValueType: "number" | "text" | "temperature_c" | "time";
     };
     responses: never;
     parameters: never;
@@ -2037,6 +2562,454 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobRun"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_categories_sop_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryOut"][];
+                };
+            };
+        };
+    };
+    list_templates_sop_templates_get: {
+        parameters: {
+            query?: {
+                category_id?: string | null;
+                include_inactive?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_template_sop_templates_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_template_sop_templates__template_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_template_sop_templates__template_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_template_sop_templates__template_id__duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_item_sop_templates__template_id__items_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItemFields"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_item_sop_templates__template_id__items__item_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_item_sop_templates__template_id__items__item_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTemplateItemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reorder_items_sop_templates__template_id__items_reorder_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemplateDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_assignments_sop_assignments_get: {
+        parameters: {
+            query?: {
+                outlet_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assignment"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_assignment_sop_assignments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAssignmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assignment"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_assignment_sop_assignments__assignment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_assignment_sop_assignments__assignment_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAssignmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Assignment"];
                 };
             };
             /** @description Validation Error */

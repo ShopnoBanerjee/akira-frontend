@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Spinner, Wordmark } from "@/components/Brand";
+import { redirect } from "./navigate";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { ROLE_LABELS, canOpenManagement, defaultShellFor } from "@/features/auth/types";
@@ -11,6 +12,9 @@ import { SettingsPage } from "@/features/admin/settings/SettingsPage";
 import { OutletsPage } from "@/features/admin/outlets/OutletsPage";
 import { UsersPage } from "@/features/admin/users/UsersPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
+import { AssignmentsPage } from "@/features/sop/templates/AssignmentsPage";
+import { TemplateBuilderPage } from "@/features/sop/templates/TemplateBuilderPage";
+import { TemplatesPage } from "@/features/sop/templates/TemplatesPage";
 import { FloorHomePage } from "@/features/floor/FloorHomePage";
 import { AppShell } from "./AppShell";
 import { FloorShell } from "./FloorShell";
@@ -30,11 +34,6 @@ function usePathname(): string {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
   return pathname;
-}
-
-function navigate(to: string) {
-  window.history.replaceState({}, "", to);
-  window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
 function PendingActivation({ reason }: { reason: string | null }) {
@@ -71,7 +70,7 @@ function Forbidden({ intended }: { intended: string }) {
           <span className="font-mono">{intended}</span>.
         </p>
         <button
-          onClick={() => navigate("/floor")}
+          onClick={() => redirect("/floor")}
           className="mt-6 h-11 rounded-md bg-akira-red px-5 text-sm font-semibold text-white hover:opacity-90"
         >
           Go to my checklists
@@ -103,7 +102,7 @@ export function Router() {
     // so a tablet handover still routes the next person to their own shell -
     // but someone opening a deep link like /app/settings/inventory keeps it.
     if (pathname === "/" || pathname === "/login") {
-      navigate(defaultShellFor(me.global_role));
+      redirect(defaultShellFor(me.global_role));
     }
   }, [status, me, pathname]);
 
@@ -125,7 +124,11 @@ export function Router() {
     // silent redirect that looks like the app is broken.
     if (!isManagement) return <Forbidden intended={pathname} />;
     let page = <DashboardPage />;
-    if (pathname.startsWith("/app/settings/outlets")) page = <OutletsPage />;
+    const builderMatch = /^\/app\/sop\/templates\/([0-9a-f-]{36})/.exec(pathname);
+    if (builderMatch?.[1]) page = <TemplateBuilderPage templateId={builderMatch[1]} />;
+    else if (pathname.startsWith("/app/sop/templates")) page = <TemplatesPage />;
+    else if (pathname.startsWith("/app/sop/assignments")) page = <AssignmentsPage />;
+    else if (pathname.startsWith("/app/settings/outlets")) page = <OutletsPage />;
     else if (pathname.startsWith("/app/settings/users")) page = <UsersPage />;
     else if (pathname.startsWith("/app/settings/devices")) page = <DevicesPage />;
     else if (pathname.startsWith("/app/settings/inventory")) page = <InventoryPage />;
