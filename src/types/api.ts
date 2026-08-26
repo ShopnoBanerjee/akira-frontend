@@ -477,6 +477,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/jobs/schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What is scheduled, and when it next fires */
+        get: operations["job_schedule_jobs_schedule_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/jobs/{job_name}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run a scheduled job now (owner only)
+         * @description Owner only, and every one of these is safe to press twice.
+         *
+         *     Materialisation is idempotent by unique constraint; marking missed only
+         *     moves runs already past grace; the digest re-sends a report rather than
+         *     changing anything. Nothing here is destructive, which is why it can be a
+         *     button at all — but it does send mail, so it is not left to ops managers.
+         */
+        post: operations["run_now_jobs__job_name__run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sop/runs/today": {
         parameters: {
             query?: never;
@@ -613,6 +655,10 @@ export interface paths {
          * Confirm an uploaded photo
          * @description Verifies the object exists in storage, then writes the metadata. Never
          *     the other way round.
+         *
+         *     Hashing the photo and running the duplicate lookback happen afterwards, in
+         *     a background task recorded to job_runs. The response returns as soon as the
+         *     metadata is written — the tablet is standing in a kitchen.
          */
         post: operations["photo_confirm_sop_runs__run_id__items__item_id__photo_confirm_post"];
         delete?: never;
@@ -812,6 +858,70 @@ export interface paths {
          */
         post: operations["waive_exception_sop_exceptions__exception_id__waive_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/reference-photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reference standards for an outlet, including the ones not captured yet
+         * @description Every photo-requiring item, with its standard attached if one exists.
+         *
+         *     Listing the gaps is the whole job. A screen that showed only what has been
+         *     captured would make an outlet with two standards look finished.
+         */
+        get: operations["list_reference_photos_sop_reference_photos_get"];
+        put?: never;
+        /**
+         * Set an outlet's reference standard for an item
+         * @description Confirms the object exists, retires the previous standard, and records
+         *     the new one. The luminance measurement runs afterwards: a standard shot in
+         *     a dark room would make every honest submission look bright by comparison,
+         *     so the number is captured for the same reason submissions are measured.
+         */
+        post: operations["set_reference_photo_sop_reference_photos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/reference-photos/upload-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Get an upload URL for a reference standard */
+        post: operations["reference_upload_url_sop_reference_photos_upload_url_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sop/reference-photos/{reference_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Retire a reference standard */
+        delete: operations["retire_reference_photo_sop_reference_photos__reference_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1171,6 +1281,25 @@ export interface components {
             sort_order: number;
             /** Icon */
             icon: string | null;
+        };
+        /** ConfirmReferenceRequest */
+        ConfirmReferenceRequest: {
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /**
+             * Template Item Id
+             * Format: uuid
+             */
+            template_item_id: string;
+            /** Path */
+            path: string;
+            /** Caption */
+            caption?: string | null;
+            /** Caption Bn */
+            caption_bn?: string | null;
         };
         /** CreateAssignmentRequest */
         CreateAssignmentRequest: {
@@ -1772,6 +1901,64 @@ export interface components {
             /** Fail Count */
             fail_count: number;
         };
+        /** ReferencePhoto */
+        ReferencePhoto: {
+            /** Id */
+            id: string | null;
+            /**
+             * Template Item Id
+             * Format: uuid
+             */
+            template_item_id: string;
+            /** Title */
+            title: string;
+            /** Title Bn */
+            title_bn: string | null;
+            /** Instruction */
+            instruction: string | null;
+            /** Requires Photo */
+            requires_photo: boolean;
+            /** Is Critical */
+            is_critical: boolean;
+            /**
+             * Template Id
+             * Format: uuid
+             */
+            template_id: string;
+            /** Template Name */
+            template_name: string;
+            /** Photo Path */
+            photo_path: string | null;
+            /** Photo View Url */
+            photo_view_url: string | null;
+            /** Caption */
+            caption: string | null;
+            /** Caption Bn */
+            caption_bn: string | null;
+            /** Luminance Mean */
+            luminance_mean: number | null;
+            /** Captured By Name */
+            captured_by_name: string | null;
+            /** Captured At */
+            captured_at: string | null;
+        };
+        /** ReferenceUploadRequest */
+        ReferenceUploadRequest: {
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /**
+             * Template Item Id
+             * Format: uuid
+             */
+            template_item_id: string;
+            /** Content Type */
+            content_type: string;
+            /** Byte Size */
+            byte_size: number;
+        };
         /** RegisterDeviceRequest */
         RegisterDeviceRequest: {
             /**
@@ -1804,11 +1991,34 @@ export interface components {
             /** Resolution Note */
             resolution_note: string;
         };
+        /** RunJobRequest */
+        RunJobRequest: {
+            /** Business Date */
+            business_date?: string | null;
+        };
         /**
          * RunStatus
          * @enum {string}
          */
         RunStatus: "pending" | "in_progress" | "submitted" | "approved" | "rejected" | "missed";
+        /** ScheduleView */
+        ScheduleView: {
+            /** Running */
+            running: boolean;
+            /** Jobs */
+            jobs: components["schemas"]["ScheduledJob"][];
+        };
+        /** ScheduledJob */
+        ScheduledJob: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Trigger */
+            trigger: string;
+            /** Next Run At */
+            next_run_at: string | null;
+        };
         /** SetLevelRequest */
         SetLevelRequest: {
             /** Par Level */
@@ -3155,6 +3365,63 @@ export interface operations {
             };
         };
     };
+    job_schedule_jobs_schedule_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleView"];
+                };
+            };
+        };
+    };
+    run_now_jobs__job_name__run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunJobRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     today_sop_runs_today_get: {
         parameters: {
             query: {
@@ -3755,6 +4022,142 @@ export interface operations {
                 "application/json": components["schemas"]["WaiveRequest"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_reference_photos_sop_reference_photos_get: {
+        parameters: {
+            query: {
+                outlet_id: string;
+                template_id?: string | null;
+                missing_only?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReferencePhoto"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_reference_photo_sop_reference_photos_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmReferenceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reference_upload_url_sop_reference_photos_upload_url_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReferenceUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retire_reference_photo_sop_reference_photos__reference_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

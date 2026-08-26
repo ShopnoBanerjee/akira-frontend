@@ -4,3 +4,8 @@ pnpm-lock.yaml
 openapi.json
 src/types/api.ts
 src/components/ui
+
+# Mirrors of the API repo's copies (docs/STAGE1_SPEC.md, docs/DECISIONS.md,
+# docs/HANDOFF.md). Reflowing a table here would make the two repos' copies
+# differ on every sync, and the diff would be pure whitespace.
+docs

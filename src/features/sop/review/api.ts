@@ -6,6 +6,21 @@ import type { components } from "@/types/api";
 export type QueueRow = components["schemas"]["QueueRow"];
 export type ExceptionRow = components["schemas"]["ExceptionRow"];
 
+/** One advisory verdict, with the confidence threshold already applied. */
+export interface AiReview {
+  verdict: "pass" | "fail" | "uncertain";
+  /** What the manager should be shown: `verdict`, downgraded to `uncertain`
+   *  when confidence fell below `uncertain_below`. */
+  shown_as: "pass" | "fail" | "uncertain";
+  confidence: number | null;
+  uncertain_below: number;
+  rationale: string;
+  model: string;
+  prompt_version: string;
+  reviewed_at: string;
+  compared_to_reference: boolean;
+}
+
 /** The review detail endpoint returns a dynamic dict; typed for this UI. */
 export interface ReviewItem {
   id: string;
@@ -19,6 +34,14 @@ export interface ReviewItem {
   photo_view_url: string | null;
   viewed_by_me: boolean;
   integrity_flags: string[];
+  /** Evidence per flag, keyed by flag name. A flag without evidence is an
+   *  accusation, so the UI always shows this alongside the chip. */
+  integrity_detail: Record<string, Record<string, unknown>>;
+  /** Null means the background pass has not looked at this photo yet, which is
+   *  not the same as clean. */
+  photo_processed_at: string | null;
+  photo_luminance: number | null;
+  ai_review: AiReview | null;
   title: string;
   title_bn: string | null;
   instruction: string | null;
@@ -48,6 +71,9 @@ export interface ReviewDetail {
   critical_fail_count: number;
   integrity_flag_count: number;
   geo_ok: boolean | null;
+  /** Run-level flags: late, out_of_geofence, burst_upload. */
+  integrity_flags: string[];
+  integrity_detail: Record<string, Record<string, unknown>>;
   rejection_reason: string | null;
   submitted_by: string | null;
   submitted_by_name: string | null;

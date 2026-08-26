@@ -255,9 +255,34 @@ export function useSetSetting() {
 
 // --- Jobs --------------------------------------------------------------------
 
+export type ScheduleView = components["schemas"]["ScheduleView"];
+
 export function useJobRuns() {
   return useQuery({
     queryKey: INVENTORY_KEYS.jobs,
     queryFn: () => api.get<JobRun[]>("/jobs/runs"),
+    // A job that ran while this screen was open should show up without a
+    // reload: this is the screen somebody opens *because* they think something
+    // did not run.
+    refetchInterval: 30_000,
+  });
+}
+
+export function useJobSchedule() {
+  return useQuery({
+    queryKey: [...INVENTORY_KEYS.jobs, "schedule"] as const,
+    queryFn: () => api.get<ScheduleView>("/jobs/schedule"),
+    refetchInterval: 60_000,
+  });
+}
+
+export function useRunJobNow() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ jobName, businessDate }: { jobName: string; businessDate?: string }) =>
+      api.post<Record<string, unknown>>(`/jobs/${jobName}/run`, {
+        business_date: businessDate ?? null,
+      }),
+    onSuccess: () => void client.invalidateQueries({ queryKey: INVENTORY_KEYS.jobs }),
   });
 }

@@ -10,20 +10,10 @@ import {
   useMarkViewed,
   useRejectRun,
   useReviewDetail,
+  type AiReview,
   type ReviewItem,
 } from "./api";
-
-/** Plain-language explanations — a red chip nobody understands is just noise. */
-const FLAG_COPY: Record<string, string> = {
-  duplicate_photo:
-    "This photo closely matches one submitted before for the same item — it may be re-used.",
-  burst_upload: "Most photos in this run were uploaded in the last few minutes before submission.",
-  out_of_geofence: "Submitted from outside the outlet's location radius.",
-  late: "Submitted after the due time plus grace period.",
-  stale_capture: "The photo was taken outside the window this run was open.",
-  too_dark: "The photo is too dark to show what it claims to.",
-  ai_mismatch: "Automated review disagreed with the recorded result.",
-};
+import { FLAG_COPY, FLAG_LABEL, flagEvidence, verdictCopy } from "./flags";
 
 export function ReviewDetailPage({ runId }: { runId: string }) {
   const { me } = useAuth();
@@ -102,6 +92,14 @@ export function ReviewDetailPage({ runId }: { runId: string }) {
             />
             <Stat label="Template" value={`v${run.template_version}`} />
           </div>
+
+          {run.integrity_flags.length > 0 && (
+            <div className="mt-3 flex max-w-xl flex-col gap-1.5">
+              {run.integrity_flags.map((flag) => (
+                <FlagLine key={flag} flag={flag} evidence={run.integrity_detail[flag]} />
+              ))}
+            </div>
+          )}
         </div>
 
         {decidable && (
@@ -254,17 +252,19 @@ function ItemRow({ item, onOpenPhoto }: { item: ReviewItem; onOpenPhoto: () => v
         )}
 
         {item.integrity_flags.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
+          <div className="mt-1.5 flex flex-col gap-1.5">
             {item.integrity_flags.map((flag) => (
-              <span
-                key={flag}
-                title={FLAG_COPY[flag] ?? flag}
-                className="rounded bg-akira-red/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-akira-red"
-              >
-                {flag.replace(/_/g, " ")}
-              </span>
+              <FlagLine key={flag} flag={flag} evidence={item.integrity_detail[flag]} />
             ))}
           </div>
+        )}
+
+        {item.ai_review && <VerdictLine review={item.ai_review} />}
+
+        {item.photo_path && item.photo_processed_at === null && (
+          <p className="mt-1.5 text-xs text-akira-ink/45">
+            The integrity checks have not run on this photo yet — not the same as clean.
+          </p>
         )}
       </div>
 
@@ -312,13 +312,9 @@ function PhotoLightbox({ item, onClose }: { item: ReviewItem | null; onClose: ()
           />
           {item.note && <p className="text-sm text-akira-ink/70">{item.note}</p>}
           {item.integrity_flags.map((flag) => (
-            <p
-              key={flag}
-              className="rounded-md border border-akira-red/25 bg-akira-red/5 px-3 py-2 text-sm text-akira-red"
-            >
-              {FLAG_COPY[flag] ?? flag}
-            </p>
+            <FlagLine key={flag} flag={flag} evidence={item.integrity_detail[flag]} />
           ))}
+          {item.ai_review && <VerdictLine review={item.ai_review} />}
           <Button onClick={onClose}>Close</Button>
         </div>
       )}
@@ -399,5 +395,65 @@ function RejectDialog({
         </div>
       </div>
     </Dialog>
+  );
+}
+
+/**
+ * One flag, with its evidence. The chip alone is an accusation; the sentence
+ * beneath it is what lets a manager check the claim instead of taking it on
+ * faith — or dismiss it, which is equally the point.
+ */
+function FlagLine({
+  flag,
+  evidence,
+}: {
+  flag: string;
+  // Explicit undefined: a flag may have no recorded evidence, and the
+  // lookup that produces it is an index access.
+  evidence: Record<string, unknown> | undefined;
+}) {
+  const detail = flagEvidence(flag, evidence);
+  return (
+    <div className="rounded-md border border-akira-red/20 bg-akira-red/[0.04] px-2.5 py-1.5">
+      <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-akira-red">
+        {FLAG_LABEL[flag] ?? flag.replace(/_/g, " ")}
+        <span className="font-normal normal-case tracking-normal text-akira-ink/60">
+          {FLAG_COPY[flag] ?? ""}
+        </span>
+      </p>
+      {detail && <p className="mt-0.5 text-xs text-akira-ink/70">{detail}</p>}
+    </div>
+  );
+}
+
+/**
+ * The advisory verdict. Deliberately not styled like a decision: it is never
+ * red even when it says fail, because red on this screen means the run failed
+ * a check, and this is an opinion a manager is free to disagree with.
+ */
+function VerdictLine({ review }: { review: AiReview }) {
+  const shown = review.shown_as;
+  return (
+    <div className="mt-1.5 rounded-md border border-akira-blue/20 bg-akira-blue/[0.04] px-2.5 py-1.5">
+      <p className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-akira-blue">
+        Automated review: {shown}
+        {review.confidence !== null && (
+          <span className="font-normal normal-case tracking-normal tabular-nums text-akira-ink/50">
+            {Math.round(review.confidence * 100)}% confident
+          </span>
+        )}
+        {shown === "uncertain" && review.verdict !== "uncertain" && (
+          <span className="font-normal normal-case tracking-normal text-akira-ink/50">
+            (said &ldquo;{review.verdict}&rdquo;, below the{" "}
+            {Math.round(review.uncertain_below * 100)}% certainty bar)
+          </span>
+        )}
+      </p>
+      <p className="mt-0.5 text-xs text-akira-ink/70">{review.rationale}</p>
+      <p className="mt-0.5 text-[11px] text-akira-ink/40">
+        {verdictCopy(shown, review.compared_to_reference)} Advisory only — it never approves or
+        blocks anything.
+      </p>
+    </div>
   );
 }
