@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { ApiError, api } from "@/lib/api";
+import { ApiError, api, setActor } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import type { Me } from "./types";
 
@@ -106,6 +106,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setMe(null);
     setPendingReason(null);
     setStatus("signed-out");
+    // Drop the PIN-minted actor with the session. Without this the token sat
+    // in sessionStorage through a device sign-out, and the next person to sign
+    // the shared tablet in resumed as the PREVIOUS staff member, no PIN asked
+    // -- found by the P10 shakedown, and exactly what D3 forbids.
+    setActor(null);
     // Clear the path too. On a shared tablet the next person must not inherit
     // where the last one happened to be.
     window.history.replaceState({}, "", "/");
