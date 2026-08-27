@@ -394,6 +394,168 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/inventory/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Counts for an outlet, newest first */
+        get: operations["list_counts_inventory_counts_get"];
+        put?: never;
+        /**
+         * Upload a photographed count sheet
+         * @description Accepts the sheet, answers immediately; extraction runs behind a
+         *     job_runs bracket and the count appears in `review` when it lands.
+         */
+        post: operations["upload_sheet_inventory_counts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inventory/counts/{count_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One count, with every line */
+        get: operations["get_count_inventory_counts__count_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inventory/counts/{count_id}/lines/{line_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Resolve a line */
+        patch: operations["review_line_inventory_counts__count_id__lines__line_id__patch"];
+        trace?: never;
+    };
+    "/inventory/counts/{count_id}/re-extract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read the stored sheet again
+         * @description The stored file is re-read — after a failure, or under a newer
+         *     extractor. Existing unconfirmed lines are replaced wholesale.
+         */
+        post: operations["re_extract_inventory_counts__count_id__re_extract_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inventory/counts/{count_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sign the count off */
+        post: operations["confirm_count_inventory_counts__count_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inventory/requisitions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Compute a requisition from a confirmed count */
+        post: operations["build_requisition_inventory_requisitions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inventory/requisitions/{requisition_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One requisition, lines and working */
+        get: operations["get_requisition_inventory_requisitions__requisition_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inventory/requisitions/{requisition_id}/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set a final quantity */
+        patch: operations["set_final_qty_inventory_requisitions__requisition_id__lines_patch"];
+        trace?: never;
+    };
+    "/inventory/requisitions/{requisition_id}/finalise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Lock the requisition */
+        post: operations["finalise_requisition_inventory_requisitions__requisition_id__finalise_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/settings": {
         parameters: {
             query?: never;
@@ -1397,6 +1559,16 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_upload_sheet_inventory_counts_post */
+        Body_upload_sheet_inventory_counts_post: {
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** File */
+            file: string;
+        };
         /** Category */
         Category: {
             /**
@@ -1678,6 +1850,16 @@ export interface components {
             created_at: string;
             /** Age Hours */
             age_hours: number;
+        };
+        /** FinalQtyRequest */
+        FinalQtyRequest: {
+            /**
+             * Item Id
+             * Format: uuid
+             */
+            item_id: string;
+            /** Final Qty */
+            final_qty?: number | null;
         };
         /** FloorStaff */
         FloorStaff: {
@@ -2216,6 +2398,20 @@ export interface components {
         ResolveRequest: {
             /** Resolution Note */
             resolution_note: string;
+        };
+        /** ReviewLineRequest */
+        ReviewLineRequest: {
+            /** Item Id */
+            item_id?: string | null;
+            /** Qty */
+            qty?: number | null;
+            /** Requested Qty */
+            requested_qty?: number | null;
+            /**
+             * Remember Alias
+             * @default false
+             */
+            remember_alias: boolean;
         };
         /** RunJobRequest */
         RunJobRequest: {
@@ -3506,6 +3702,348 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Item"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_counts_inventory_counts_get: {
+        parameters: {
+            query: {
+                outlet_id: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_sheet_inventory_counts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_sheet_inventory_counts_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_count_inventory_counts__count_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                count_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_line_inventory_counts__count_id__lines__line_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                count_id: string;
+                line_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewLineRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    re_extract_inventory_counts__count_id__re_extract_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                count_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_count_inventory_counts__count_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                count_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    build_requisition_inventory_requisitions_post: {
+        parameters: {
+            query: {
+                count_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_requisition_inventory_requisitions__requisition_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requisition_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_final_qty_inventory_requisitions__requisition_id__lines_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requisition_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinalQtyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    finalise_requisition_inventory_requisitions__requisition_id__finalise_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requisition_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

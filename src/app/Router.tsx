@@ -7,6 +7,9 @@ import { LoginPage } from "@/features/auth/LoginPage";
 import { ROLE_LABELS, canOpenManagement, defaultShellFor } from "@/features/auth/types";
 import { DevicesPage } from "@/features/admin/devices/DevicesPage";
 import { InventoryPage } from "@/features/admin/inventory/InventoryPage";
+import { CountReviewPage } from "@/features/inventory/counts/CountReviewPage";
+import { RequisitionPage } from "@/features/inventory/counts/RequisitionPage";
+import { StockCountsPage } from "@/features/inventory/counts/StockCountsPage";
 import { JobsPage } from "@/features/admin/jobs/JobsPage";
 import { SettingsPage } from "@/features/admin/settings/SettingsPage";
 import { OutletsPage } from "@/features/admin/outlets/OutletsPage";
@@ -131,6 +134,8 @@ export function Router() {
     if (!isManagement) return <Forbidden intended={pathname} />;
     let page = <DashboardPage />;
     const reviewMatch = /^\/app\/sop\/review\/([0-9a-f-]{36})/.exec(pathname);
+    const countMatch = /^\/app\/inventory\/counts\/([0-9a-f-]{36})/.exec(pathname);
+    const requisitionMatch = /^\/app\/inventory\/requisitions\/([0-9a-f-]{36})/.exec(pathname);
     const builderMatch = /^\/app\/sop\/templates\/([0-9a-f-]{36})/.exec(pathname);
     if (builderMatch?.[1]) page = <TemplateBuilderPage templateId={builderMatch[1]} />;
     else if (pathname.startsWith("/app/sop/templates")) page = <TemplatesPage />;
@@ -140,6 +145,10 @@ export function Router() {
     else if (pathname.startsWith("/app/sop/exceptions")) page = <ExceptionsPage />;
     else if (pathname.startsWith("/app/sop/reference-photos")) page = <ReferencePhotosPage />;
     else if (pathname.startsWith("/app/sales")) page = <SalesPage />;
+    else if (countMatch?.[1]) page = <CountReviewPage countId={countMatch[1]} />;
+    else if (requisitionMatch?.[1])
+      page = <RequisitionPage requisitionId={requisitionMatch[1]} />;
+    else if (pathname.startsWith("/app/inventory/counts")) page = <StockCountsPage />;
     else if (pathname.startsWith("/app/settings/outlets")) page = <OutletsPage />;
     else if (pathname.startsWith("/app/settings/users")) page = <UsersPage />;
     else if (pathname.startsWith("/app/settings/devices")) page = <DevicesPage />;
