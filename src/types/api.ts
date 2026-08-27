@@ -561,6 +561,103 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sales/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Uploads and how they parsed
+         * @description Newest first, each carrying its warnings. A parser that dropped rows
+         *     silently would be a parser nobody could trust, so what it skipped travels
+         *     with the upload.
+         */
+        get: operations["list_uploads_sales_uploads_get"];
+        put?: never;
+        /**
+         * Upload a Petpooja export
+         * @description Accepts an Orders Master Report .xlsx and parses it in the background.
+         *
+         *     The outlet is chosen here rather than read from the file: a Petpooja export
+         *     names only the restaurant, so two outlets produce indistinguishable files.
+         *
+         *     Re-sending a file already ingested returns the original upload untouched —
+         *     idempotency is on the bytes, not the filename, which carries an export
+         *     timestamp and changes every time.
+         */
+        post: operations["upload_export_sales_uploads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales/uploads/{upload_id}/reparse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parse a stored file again
+         * @description Re-read the stored original — after an adapter version bump, or after
+         *     fixing whatever made it fail. The file is kept precisely so nobody has to
+         *     go back to Petpooja and export it again.
+         */
+        post: operations["reparse_sales_uploads__upload_id__reparse_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ingested bills
+         * @description Grouped and filtered by `business_date`, never by the calendar date —
+         *     a bill at 00:45 belongs to the night before.
+         */
+        get: operations["list_orders_sales_orders_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales/daily": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Net sales per trading day
+         * @description What the Stage 2 sales pillar will read. Here now because it is the
+         *     cheapest way to see whether an ingest landed on the days it should.
+         */
+        get: operations["daily_sales_daily_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sop/runs/today": {
         parameters: {
             query?: never;
@@ -1290,6 +1387,16 @@ export interface components {
             /** Is Active */
             is_active: boolean;
         };
+        /** Body_upload_export_sales_uploads_post */
+        Body_upload_export_sales_uploads_post: {
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** File */
+            file: string;
+        };
         /** Category */
         Category: {
             /**
@@ -1442,6 +1549,20 @@ export interface components {
             frequency: components["schemas"]["Frequency"];
             /** @default any */
             day_part: components["schemas"]["DayPart"];
+        };
+        /** DailyTotal */
+        DailyTotal: {
+            /**
+             * Business Date
+             * Format: date
+             */
+            business_date: string;
+            /** Bills */
+            bills: number;
+            /** Net Paise */
+            net_paise: number;
+            /** Covers */
+            covers: number;
         };
         /**
          * DayPart
@@ -1811,6 +1932,51 @@ export interface components {
             /** Outlets */
             outlets: components["schemas"]["OutletSummary"][];
             device?: components["schemas"]["DeviceSummary"] | null;
+        };
+        /** OrderRow */
+        OrderRow: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** Outlet Code */
+            outlet_code: string;
+            /** External Bill No */
+            external_bill_no: string;
+            /**
+             * Business Date
+             * Format: date
+             */
+            business_date: string;
+            /**
+             * Ordered At
+             * Format: date-time
+             */
+            ordered_at: string;
+            /** Channel */
+            channel: string | null;
+            /** Covers */
+            covers: number | null;
+            /** Gross Paise */
+            gross_paise: number;
+            /** Discount Paise */
+            discount_paise: number;
+            /** Tax Paise */
+            tax_paise: number;
+            /** Net Paise */
+            net_paise: number;
+            /** Payment Mode */
+            payment_mode: string | null;
+            /** Table No */
+            table_no: string | null;
+            /** Has Phone */
+            has_phone: boolean;
         };
         /** OutletHealthRow */
         OutletHealthRow: {
@@ -2434,6 +2600,54 @@ export interface components {
             employee_code?: string | null;
             /** Is Active */
             is_active?: boolean | null;
+        };
+        /** UploadRow */
+        UploadRow: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** Outlet Code */
+            outlet_code: string;
+            /** Source */
+            source: string;
+            /** Original Filename */
+            original_filename: string;
+            /** File Sha256 */
+            file_sha256: string;
+            /** Status */
+            status: string;
+            /** Row Count */
+            row_count: number | null;
+            /** Period Start */
+            period_start: string | null;
+            /** Period End */
+            period_end: string | null;
+            /** Warnings */
+            warnings: {
+                [key: string]: unknown;
+            }[];
+            /** Error Detail */
+            error_detail: string | null;
+            /** Adapter Version */
+            adapter_version: string | null;
+            /** Parsed Net Paise */
+            parsed_net_paise: number | null;
+            /** Uploaded By Name */
+            uploaded_by_name: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Parsed At */
+            parsed_at: string | null;
         };
         /**
          * UserListItem
@@ -3536,6 +3750,173 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_uploads_sales_uploads_get: {
+        parameters: {
+            query?: {
+                outlet_id?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UploadRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_export_sales_uploads_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_export_sales_uploads_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reparse_sales_uploads__upload_id__reparse_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_orders_sales_orders_get: {
+        parameters: {
+            query?: {
+                outlet_id?: string | null;
+                from?: string | null;
+                to?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    daily_sales_daily_get: {
+        parameters: {
+            query: {
+                outlet_id: string;
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyTotal"][];
                 };
             };
             /** @description Validation Error */
