@@ -519,6 +519,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dashboard/outlets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One score per outlet the caller can see
+         * @description The comparison row across outlets. Ordered by code, not by score — a
+         *     league table invites gaming the number rather than doing the work.
+         */
+        get: operations["outlet_scores_dashboard_outlets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dashboard/outlet-health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The four-pillar health card for one outlet
+         * @description Everything the card renders: the score, how it was arrived at, what
+         *     dragged it down, and the trend behind it.
+         */
+        get: operations["outlet_health_dashboard_outlet_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sop/runs/today": {
         parameters: {
             query?: never;
@@ -1769,6 +1811,24 @@ export interface components {
             /** Outlets */
             outlets: components["schemas"]["OutletSummary"][];
             device?: components["schemas"]["DeviceSummary"] | null;
+        };
+        /** OutletHealthRow */
+        OutletHealthRow: {
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** Outlet Code */
+            outlet_code: string;
+            /** Outlet Name */
+            outlet_name: string;
+            /** Score */
+            score: number | null;
+            /** Band */
+            band: string;
+            /** Capped By Critical */
+            capped_by_critical: boolean;
         };
         /** OutletLevel */
         OutletLevel: {
@@ -3399,6 +3459,73 @@ export interface operations {
                 "application/json": components["schemas"]["RunJobRequest"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    outlet_scores_dashboard_outlets_get: {
+        parameters: {
+            query?: {
+                days?: number;
+                to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OutletHealthRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    outlet_health_dashboard_outlet_health_get: {
+        parameters: {
+            query: {
+                outlet_id: string;
+                days?: number;
+                to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
