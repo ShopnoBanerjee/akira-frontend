@@ -9,6 +9,7 @@ const NAV = [
   { label: "SOP Templates", to: "/app/sop/templates", ready: true },
   { label: "Review Queue", to: "/app/sop/review", ready: true },
   { label: "Exceptions", to: "/app/sop/exceptions", ready: true },
+  { label: "Sales", to: "/app/sales", ready: true },
   { label: "Assignments", to: "/app/sop/assignments", ready: true },
   { label: "Reference Photos", to: "/app/sop/reference-photos", ready: true },
   { label: "Outlets", to: "/app/settings/outlets", ready: true },

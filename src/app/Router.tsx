@@ -19,6 +19,7 @@ import { ExceptionsPage } from "@/features/sop/review/ExceptionsPage";
 import { ReviewDetailPage } from "@/features/sop/review/ReviewDetailPage";
 import { ReviewQueuePage } from "@/features/sop/review/ReviewQueuePage";
 import { ReferencePhotosPage } from "@/features/sop/reference/ReferencePhotosPage";
+import { SalesPage } from "@/features/sales/SalesPage";
 import { FloorHomePage } from "@/features/floor/FloorHomePage";
 import { RunPage } from "@/features/floor/RunPage";
 import { AppShell } from "./AppShell";
@@ -138,6 +139,7 @@ export function Router() {
     else if (pathname.startsWith("/app/sop/review")) page = <ReviewQueuePage />;
     else if (pathname.startsWith("/app/sop/exceptions")) page = <ExceptionsPage />;
     else if (pathname.startsWith("/app/sop/reference-photos")) page = <ReferencePhotosPage />;
+    else if (pathname.startsWith("/app/sales")) page = <SalesPage />;
     else if (pathname.startsWith("/app/settings/outlets")) page = <OutletsPage />;
     else if (pathname.startsWith("/app/settings/users")) page = <UsersPage />;
     else if (pathname.startsWith("/app/settings/devices")) page = <DevicesPage />;

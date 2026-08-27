@@ -101,10 +101,16 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   body?: unknown;
   /** Internal: prevents an endless refresh loop on a 401. */
   retryOnUnauthorized?: boolean;
+  /**
+   * Send `body` as-is instead of JSON. For FormData, where the browser must
+   * set its own Content-Type — it carries the multipart boundary, and naming
+   * the type ourselves would produce a request the server cannot split.
+   */
+  raw?: boolean;
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { body, retryOnUnauthorized = true, headers, ...rest } = options;
+  const { body, retryOnUnauthorized = true, raw = false, headers, ...rest } = options;
 
   const {
     data: { session },
@@ -113,12 +119,12 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const response = await fetch(`${BASE_URL}${path}`, {
     ...rest,
     headers: {
-      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+      ...(body === undefined || raw ? {} : { "Content-Type": "application/json" }),
       ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
       ...(getActor() ? { "X-Actor-Token": getActor()!.token } : {}),
       ...headers,
     },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    ...(body === undefined ? {} : { body: raw ? (body as BodyInit) : JSON.stringify(body) }),
   });
 
   if (response.status === 401 && retryOnUnauthorized) {
@@ -143,6 +149,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) => request<T>(path, { method: "POST", body }),
+  /** Multipart, for file uploads. The browser sets the boundary. */
+  postForm: <T>(path: string, body: FormData) =>
+    request<T>(path, { method: "POST", body, raw: true }),
   patch: <T>(path: string, body?: unknown) => request<T>(path, { method: "PATCH", body }),
   put: <T>(path: string, body?: unknown) => request<T>(path, { method: "PUT", body }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
