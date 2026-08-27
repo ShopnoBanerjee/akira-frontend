@@ -125,11 +125,15 @@ export function CountReviewPage({ countId }: { countId: string }) {
                 buildReq.mutate(countId, {
                   onSuccess: (r) => navigate(`/app/inventory/requisitions/${r.requisition_id}`),
                   onError: (e) => {
-                    if (e instanceof ApiError && e.problem.extra?.requisition_id) {
-                      navigate(
-                        `/app/inventory/requisitions/${String(e.problem.extra.requisition_id)}`,
-                      );
-                      return;
+                    // "Already exists" carries the existing requisition's id —
+                    // the right response is to go there, not to show an error.
+                    if (e instanceof ApiError) {
+                      const extra = e.problem.extra as Record<string, unknown> | undefined;
+                      const existing = extra?.requisition_id;
+                      if (typeof existing === "string") {
+                        navigate(`/app/inventory/requisitions/${existing}`);
+                        return;
+                      }
                     }
                     setError(e instanceof ApiError ? e.problem.detail : e.message);
                   },
