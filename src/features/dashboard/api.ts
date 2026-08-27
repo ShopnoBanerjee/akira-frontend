@@ -3,9 +3,11 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { components } from "@/types/api";
 
+import type { Band } from "./format";
+
 export type OutletHealthRow = components["schemas"]["OutletHealthRow"];
 
-export type Band = "green" | "amber" | "red" | "none";
+export type { Band } from "./format";
 
 export interface Pillar {
   key: string;
@@ -81,47 +83,4 @@ export function useOutletHealth(outletId: string | null, days = 28) {
     // which reads as a broken button rather than as a fetch.
     placeholderData: keepPreviousData,
   });
-}
-
-/** Brand colours per health band. Red is a band here, not chrome. */
-export const BAND_COLOUR: Record<Band, string> = {
-  green: "var(--color-health-green)",
-  amber: "var(--color-health-amber)",
-  red: "var(--color-health-red)",
-  none: "rgba(35,31,32,0.25)",
-};
-
-export const BAND_TEXT: Record<Band, string> = {
-  green: "text-health-green",
-  amber: "text-[#8a6414]",
-  red: "text-akira-red",
-  none: "text-akira-ink/40",
-};
-
-/** A percentage, or an em dash — never a fabricated zero. */
-export function pct(value: number | null | undefined): string {
-  return value == null ? "—" : `${Math.round(value)}%`;
-}
-
-/**
- * An SVG path through the trend points, scaled into the given box.
- *
- * Pure so it can be tested without rendering. Returns null when there is
- * nothing worth drawing: a single point is not a trend, and a flat line
- * through one value would imply a stability nobody has evidence for.
- */
-export function sparklinePath(scores: number[], width: number, height: number): string | null {
-  if (scores.length < 2) return null;
-  const min = Math.min(...scores);
-  const max = Math.max(...scores);
-  // A perfectly flat run would divide by zero; draw it down the middle.
-  const span = max - min || 1;
-  const step = width / (scores.length - 1);
-  return scores
-    .map((score, i) => {
-      const x = i * step;
-      const y = height - ((score - min) / span) * height;
-      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
 }

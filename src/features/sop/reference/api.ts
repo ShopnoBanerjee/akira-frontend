@@ -2,9 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import { resizeImage } from "@/lib/image";
-import type { components } from "@/types/api";
 
-export type ReferencePhoto = components["schemas"]["ReferencePhoto"];
+import type { ReferencePhoto } from "./coverage";
+
+// Re-exported so callers can keep importing the type from the hook module
+// they already use.
+export type { ReferencePhoto };
 
 const KEYS = {
   all: ["sop", "reference-photos"] as const,
@@ -74,20 +77,4 @@ export function useRetireReferencePhoto() {
     mutationFn: (id: string) => api.delete<void>(`/sop/reference-photos/${id}`),
     onSuccess: () => void client.invalidateQueries({ queryKey: KEYS.all }),
   });
-}
-
-/** Coverage for the header: how much of this outlet's standard is captured. */
-export function coverage(rows: ReferencePhoto[] | undefined): {
-  captured: number;
-  total: number;
-  pct: number;
-} {
-  const total = rows?.length ?? 0;
-  const captured = rows?.filter((r) => r.photo_path).length ?? 0;
-  if (total === 0) return { captured, total, pct: 0 };
-  // Floored, not rounded. 199 of 200 rounds to 100%, and a bar reading 100%
-  // with a gap behind it is exactly the wrong thing to show before switching
-  // on a reviewer that depends on the standards being there.
-  const exact = (100 * captured) / total;
-  return { captured, total, pct: captured === total ? 100 : Math.floor(exact) };
 }

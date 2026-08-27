@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { coverage, type ReferencePhoto } from "./api";
+import { coverage, type ReferencePhoto } from "./coverage";
 
 function row(captured: boolean, id = crypto.randomUUID()): ReferencePhoto {
   return {

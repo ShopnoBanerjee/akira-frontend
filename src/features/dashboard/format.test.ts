@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { pct, sparklinePath } from "./api";
+import { pct, sparklinePath } from "./format";
 
 describe("pct", () => {
   it("renders a percentage", () => {

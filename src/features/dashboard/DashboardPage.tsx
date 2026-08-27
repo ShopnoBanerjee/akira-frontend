@@ -5,16 +5,8 @@ import { Button, EmptyState, TableSkeleton } from "@/components/ui/primitives";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ROLE_LABELS } from "@/features/auth/types";
 import { cn } from "@/lib/utils";
-import {
-  BAND_COLOUR,
-  BAND_TEXT,
-  pct,
-  sparklinePath,
-  useOutletHealth,
-  useOutletScores,
-  type Band,
-  type OutletHealth,
-} from "./api";
+import { useOutletHealth, useOutletScores, type OutletHealth } from "./api";
+import { BAND_COLOUR, BAND_TEXT, pct, sparklinePath, type Band } from "./format";
 
 const PERIODS = [7, 28, 90];
 

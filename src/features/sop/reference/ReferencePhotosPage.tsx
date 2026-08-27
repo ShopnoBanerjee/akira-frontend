@@ -5,13 +5,8 @@ import { useOutlets } from "@/features/admin/api";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import {
-  coverage,
-  useReferencePhotos,
-  useRetireReferencePhoto,
-  useSetReferencePhoto,
-  type ReferencePhoto,
-} from "./api";
+import { useReferencePhotos, useRetireReferencePhoto, useSetReferencePhoto } from "./api";
+import { coverage, type ReferencePhoto } from "./coverage";
 
 /**
  * Capturing each outlet's photographic standard.
