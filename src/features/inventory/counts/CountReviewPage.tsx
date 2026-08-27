@@ -40,8 +40,9 @@ export function CountReviewPage({ countId }: { countId: string }) {
   );
   const visible = useMemo(
     () =>
-      detail?.lines.filter((line) => !onlyReview || line.needs_review || detail.status !== "review") ??
-      [],
+      detail?.lines.filter(
+        (line) => !onlyReview || line.needs_review || detail.status !== "review",
+      ) ?? [],
     [detail, onlyReview],
   );
 
@@ -67,10 +68,7 @@ export function CountReviewPage({ countId }: { countId: string }) {
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-8">
-      <button
-        className="text-sm text-akira-blue"
-        onClick={() => navigate("/app/inventory/counts")}
-      >
+      <button className="text-sm text-akira-blue" onClick={() => navigate("/app/inventory/counts")}>
         ← Stock counts
       </button>
       <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
@@ -95,8 +93,7 @@ export function CountReviewPage({ countId }: { countId: string }) {
               onClick={() => {
                 setError(null);
                 reExtract.mutate(undefined, {
-                  onError: (e) =>
-                    setError(e instanceof ApiError ? e.problem.detail : e.message),
+                  onError: (e) => setError(e instanceof ApiError ? e.problem.detail : e.message),
                 });
               }}
               disabled={reExtract.isPending}
@@ -109,8 +106,7 @@ export function CountReviewPage({ countId }: { countId: string }) {
               onClick={() => {
                 setError(null);
                 confirm.mutate(undefined, {
-                  onError: (e) =>
-                    setError(e instanceof ApiError ? e.problem.detail : e.message),
+                  onError: (e) => setError(e instanceof ApiError ? e.problem.detail : e.message),
                 });
               }}
               disabled={confirm.isPending || openLines > 0}
@@ -149,8 +145,8 @@ export function CountReviewPage({ countId }: { countId: string }) {
 
       {detail.status === "confirmed" && (
         <p className="mt-3 rounded bg-akira-green/10 px-3 py-2 text-sm text-akira-green">
-          Confirmed by {detail.confirmed_by_name}. This is the outlet&apos;s on-hand
-          count for {formatBusinessDate(detail.business_date)}.
+          Confirmed by {detail.confirmed_by_name}. This is the outlet&apos;s on-hand count for{" "}
+          {formatBusinessDate(detail.business_date)}.
         </p>
       )}
       {detail.status === "extracting" && (
@@ -180,7 +176,12 @@ export function CountReviewPage({ countId }: { countId: string }) {
         )}
         <div className="space-y-2">
           {visible.map((line) => (
-            <LineCard key={line.id} countId={countId} line={line} locked={detail.status !== "review"} />
+            <LineCard
+              key={line.id}
+              countId={countId}
+              line={line}
+              locked={detail.status !== "review"}
+            />
           ))}
         </div>
       </section>
@@ -222,9 +223,8 @@ function LineCard({
             )}
           </p>
           <p className="mt-0.5 text-xs text-akira-ink/50">
-            Sheet says: closing{" "}
-            <span className="font-mono">{line.raw_closing ?? "—"}</span> · requisition{" "}
-            <span className="font-mono">{line.raw_requisition ?? "—"}</span>
+            Sheet says: closing <span className="font-mono">{line.raw_closing ?? "—"}</span> ·
+            requisition <span className="font-mono">{line.raw_requisition ?? "—"}</span>
             {line.extract_confidence != null && (
               <> · extractor {Math.round(line.extract_confidence * 100)}% sure</>
             )}
@@ -278,9 +278,7 @@ function ReadingPair({
   return (
     <div className="text-right">
       <p className="text-[10px] uppercase tracking-wide text-akira-ink/40">{label}</p>
-      <p className="font-mono tabular-nums">
-        {value != null ? `${value} ${unit ?? ""}` : "—"}
-      </p>
+      <p className="font-mono tabular-nums">{value != null ? `${value} ${unit ?? ""}` : "—"}</p>
     </div>
   );
 }

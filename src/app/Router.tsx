@@ -146,8 +146,7 @@ export function Router() {
     else if (pathname.startsWith("/app/sop/reference-photos")) page = <ReferencePhotosPage />;
     else if (pathname.startsWith("/app/sales")) page = <SalesPage />;
     else if (countMatch?.[1]) page = <CountReviewPage countId={countMatch[1]} />;
-    else if (requisitionMatch?.[1])
-      page = <RequisitionPage requisitionId={requisitionMatch[1]} />;
+    else if (requisitionMatch?.[1]) page = <RequisitionPage requisitionId={requisitionMatch[1]} />;
     else if (pathname.startsWith("/app/inventory/counts")) page = <StockCountsPage />;
     else if (pathname.startsWith("/app/settings/outlets")) page = <OutletsPage />;
     else if (pathname.startsWith("/app/settings/users")) page = <UsersPage />;

@@ -211,11 +211,7 @@ function RequisitionRow({
 function Num({ value, unit }: { value: number | null; unit: string }) {
   return (
     <td className="px-4 py-2.5 text-right font-mono tabular-nums">
-      {value != null ? (
-        `${value} ${unit}`
-      ) : (
-        <span className="text-akira-ink/35">—</span>
-      )}
+      {value != null ? `${value} ${unit}` : <span className="text-akira-ink/35">—</span>}
     </td>
   );
 }

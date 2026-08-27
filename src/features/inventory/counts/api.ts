@@ -185,8 +185,7 @@ export function useSetFinalQty(requisitionId: string) {
         item_id: itemId,
         final_qty: finalQty,
       }),
-    onSuccess: () =>
-      void client.invalidateQueries({ queryKey: KEYS.requisition(requisitionId) }),
+    onSuccess: () => void client.invalidateQueries({ queryKey: KEYS.requisition(requisitionId) }),
   });
 }
 
@@ -194,8 +193,7 @@ export function useFinaliseRequisition(requisitionId: string) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: () => api.post(`/inventory/requisitions/${requisitionId}/finalise`),
-    onSuccess: () =>
-      void client.invalidateQueries({ queryKey: KEYS.requisition(requisitionId) }),
+    onSuccess: () => void client.invalidateQueries({ queryKey: KEYS.requisition(requisitionId) }),
   });
 }
 

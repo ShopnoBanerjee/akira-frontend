@@ -58,9 +58,9 @@ export function StockCountsPage() {
         <div>
           <h1 className="text-xl font-bold">Stock counts</h1>
           <p className="mt-1 max-w-xl text-sm text-akira-ink/60">
-            Photographed count sheets, read by the extractor and checked by a
-            person. Nothing becomes the outlet&apos;s on-hand truth until someone
-            has resolved every line the machine was unsure about.
+            Photographed count sheets, read by the extractor and checked by a person. Nothing
+            becomes the outlet&apos;s on-hand truth until someone has resolved every line the
+            machine was unsure about.
           </p>
         </div>
         <div className="flex items-center gap-3">
