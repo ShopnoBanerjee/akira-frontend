@@ -33,6 +33,17 @@ export interface ScorePenalty {
   detail: string;
 }
 
+export interface SalesComponent {
+  key: string;
+  label: string;
+  display: string;
+  target: string;
+  score: number | null;
+  weight: number;
+  contribution: number;
+  band: Band;
+}
+
 export interface OutletHealth {
   outlet_id: string;
   outlet_code: string;
@@ -56,6 +67,13 @@ export interface OutletHealth {
       open_critical: number;
       stale_critical: number;
     };
+  };
+  sales: {
+    score: number | null;
+    band: Band;
+    components: SalesComponent[];
+    dragged_down_by: { key: string; label: string; display: string } | null;
+    detail: Record<string, unknown>;
   };
   trend: { business_date: string; score: number; approved: number }[];
 }

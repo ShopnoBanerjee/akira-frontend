@@ -281,15 +281,83 @@ function HealthCard({ health }: { health: OutletHealth }) {
         </div>
       </section>
 
-      {/* --- The other three pillars ---------------------------------- */}
+      {/* --- Sales & growth (P12): the second live pillar ------------- */}
+      <section className="mt-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-akira-ink/50">
+            Sales &amp; growth
+          </h2>
+          {health.sales.score != null && (
+            <span
+              className={cn("text-sm font-semibold tabular-nums", BAND_TEXT[health.sales.band])}
+            >
+              {health.sales.score} / 100
+            </span>
+          )}
+        </div>
+        {health.sales.score == null ? (
+          <p className="mt-2 rounded-lg border border-dashed border-akira-ink/12 bg-akira-ink/[0.02] p-4 text-sm text-akira-ink/55">
+            Nothing traded in this period, so there is nothing to score — a shut period has not
+            failed, it has not been measured.
+          </p>
+        ) : (
+          <>
+            {health.sales.dragged_down_by && (
+              <p className="mt-1 text-sm text-akira-ink/60">
+                Dragged down by: {health.sales.dragged_down_by.label.toLowerCase()}{" "}
+                {health.sales.dragged_down_by.display}
+              </p>
+            )}
+            <div className="mt-3 overflow-x-auto rounded-lg border border-akira-ink/10 bg-white">
+              <table className="w-full text-sm">
+                <thead className="border-b border-akira-ink/10 text-left text-[11px] uppercase tracking-wide text-akira-ink/45">
+                  <tr>
+                    <th className="px-4 py-2 font-semibold">Component</th>
+                    <th className="px-4 py-2 text-right font-semibold">Value</th>
+                    <th className="px-4 py-2 font-semibold">Target</th>
+                    <th className="px-4 py-2 text-right font-semibold">Score</th>
+                    <th className="px-4 py-2 text-right font-semibold">Weight</th>
+                    <th className="px-4 py-2 text-right font-semibold">Contributes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {health.sales.components.map((component) => (
+                    <tr key={component.key} className="border-b border-akira-ink/5 last:border-0">
+                      <td className="px-4 py-2">{component.label}</td>
+                      <td
+                        className={cn(
+                          "px-4 py-2 text-right font-mono tabular-nums",
+                          BAND_TEXT[component.band],
+                        )}
+                      >
+                        {component.display}
+                      </td>
+                      <td className="px-4 py-2 text-akira-ink/50">{component.target}</td>
+                      <td className="px-4 py-2 text-right tabular-nums">{component.score}</td>
+                      <td className="px-4 py-2 text-right tabular-nums text-akira-ink/50">
+                        {component.weight}
+                      </td>
+                      <td className="px-4 py-2 text-right font-semibold tabular-nums">
+                        {component.contribution}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </section>
+
+      {/* --- The pillar row ------------------------------------------- */}
       <section className="mt-6">
         <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-akira-ink/50">
           Outlet health
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-akira-ink/55">
-          One number per outlet from four weighted pillars. Stage 1 measures one of them, so there
-          is no blended score yet — a figure built from a quarter of the evidence would be worse
-          than none.
+          One number per outlet from four weighted pillars. Two are live — SOP compliance and Sales
+          &amp; growth — and there is still no blended score: a figure built from half the evidence
+          would change the day the next pillar lands, with nothing about the outlet having changed.
         </p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {health.pillars.map((pillar) => (
