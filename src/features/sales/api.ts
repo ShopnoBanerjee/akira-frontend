@@ -6,11 +6,13 @@ import type { components } from "@/types/api";
 export type UploadRow = components["schemas"]["UploadRow"];
 export type OrderRow = components["schemas"]["OrderRow"];
 export type DailyTotal = components["schemas"]["DailyTotal"];
+export type ItemSummaryRow = components["schemas"]["ItemSummaryRow"];
 
 const KEYS = {
   uploads: ["sales", "uploads"] as const,
   orders: ["sales", "orders"] as const,
   daily: ["sales", "daily"] as const,
+  items: ["sales", "items"] as const,
 };
 
 export function useUploads(outletId: string | null) {
@@ -46,6 +48,14 @@ export function useOrders(outletId: string | null, businessDate: string | null) 
   });
 }
 
+export function useItemSummary(outletId: string | null) {
+  return useQuery({
+    queryKey: [...KEYS.items, outletId],
+    queryFn: () => api.get<ItemSummaryRow[]>(`/sales/items?outlet_id=${outletId}`),
+    enabled: outletId !== null,
+  });
+}
+
 export function useUploadExport(outletId: string) {
   const client = useQueryClient();
   return useMutation({
@@ -64,6 +74,7 @@ export function useUploadExport(outletId: string) {
       void client.invalidateQueries({ queryKey: KEYS.uploads });
       void client.invalidateQueries({ queryKey: KEYS.daily });
       void client.invalidateQueries({ queryKey: KEYS.orders });
+      void client.invalidateQueries({ queryKey: KEYS.items });
     },
   });
 }
@@ -105,6 +116,16 @@ export function describeWarning(w: Record<string, unknown>): string {
       return `Skipped${bill}: the date could not be read.`;
     case "unknown_order_type":
       return `Order type "${text(w.value) ?? "unknown"}" is not one this reads; the bill counted but has no channel.`;
+    case "unmatched_bills":
+      return `${text(w.count) ?? "Some"} orders are not in the ingested bills yet — upload the Orders Master Report covering this period, then re-parse.`;
+    case "duplicate_order":
+      return `Repeated order number${bill} — taken once.`;
+    case "empty_items":
+      return `Order${bill} listed no items; nothing written for it.`;
+    case "rejoined_item_name":
+      return `An item name${bill} contained a comma and was stitched back together — worth a glance.`;
+    case "bad_amount":
+      return `The amount${bill} could not be read; items were still taken.`;
     case "missing_column":
       return `The export has no "${text(w.column) ?? "?"}" column, so ${text(w.effect) ?? "a field is unset"}.`;
     default:

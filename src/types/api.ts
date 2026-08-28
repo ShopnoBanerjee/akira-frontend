@@ -740,7 +740,12 @@ export interface paths {
         put?: never;
         /**
          * Upload a Petpooja export
-         * @description Accepts an Orders Master Report .xlsx and parses it in the background.
+         * @description Accepts a Petpooja .xlsx export and parses it in the background.
+         *
+         *     Two reports are understood, told apart by their header row: the Orders
+         *     Master Report (bills) and the Order Listing report (item names per bill).
+         *     The uploader does not choose — the file says what it is, and anything
+         *     else is refused here in the request.
          *
          *     The outlet is chosen here rather than read from the file: a Petpooja export
          *     names only the restaurant, so two outlets produce indistinguishable files.
@@ -812,6 +817,28 @@ export interface paths {
          *     cheapest way to see whether an ingest landed on the days it should.
          */
         get: operations["daily_sales_daily_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How often each item appears on a bill
+         * @description Appearances, not units: the Order Listing carries names without
+         *     quantities, so a bill with two Shoyu Ramen counts once. Empty until a
+         *     listing has been uploaded for the outlet.
+         */
+        get: operations["items_sales_items_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2041,6 +2068,23 @@ export interface components {
          * @enum {string}
          */
         ItemResult: "pass" | "fail" | "na" | "pending";
+        /** ItemSummaryRow */
+        ItemSummaryRow: {
+            /** Item Name */
+            item_name: string;
+            /** Bills */
+            bills: number;
+            /**
+             * First Date
+             * Format: date
+             */
+            first_date: string;
+            /**
+             * Last Date
+             * Format: date
+             */
+            last_date: string;
+        };
         /** JobRun */
         JobRun: {
             /**
@@ -2159,6 +2203,8 @@ export interface components {
             table_no: string | null;
             /** Has Phone */
             has_phone: boolean;
+            /** Items */
+            items: string[];
         };
         /** OutletHealthRow */
         OutletHealthRow: {
@@ -4455,6 +4501,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DailyTotal"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    items_sales_items_get: {
+        parameters: {
+            query: {
+                outlet_id: string;
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemSummaryRow"][];
                 };
             };
             /** @description Validation Error */
