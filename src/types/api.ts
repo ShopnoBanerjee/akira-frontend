@@ -2223,6 +2223,12 @@ export interface components {
             band: string;
             /** Capped By Critical */
             capped_by_critical: boolean;
+            /** Pillars */
+            pillars: {
+                [key: string]: number | null;
+            };
+            /** Unmeasured */
+            unmeasured: string[];
         };
         /** OutletLevel */
         OutletLevel: {

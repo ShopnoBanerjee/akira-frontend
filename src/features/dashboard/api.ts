@@ -15,7 +15,29 @@ export interface Pillar {
   weight: number;
   score: number | null;
   band: Band;
-  status: "live" | "stage_2";
+  status: "live" | "not_measured";
+}
+
+/** Components of the pillar_math-shaped pillars (inventory, guest). */
+export interface PillarComponent {
+  key: string;
+  label: string;
+  display: string;
+  target: string;
+  score: number | null;
+  weight: number;
+  contribution: number;
+  band: Band;
+  status: "live" | "monitor" | "pending";
+  note: string | null;
+}
+
+export interface PillarBlock {
+  score: number | null;
+  band: Band;
+  components: PillarComponent[];
+  dragged_down_by: { key: string; label: string; display: string } | null;
+  detail: Record<string, unknown>;
 }
 
 export interface ScoreComponent {
@@ -49,6 +71,13 @@ export interface OutletHealth {
   outlet_code: string;
   outlet_name: string;
   period: { from: string; to: string; days: number };
+  health: {
+    score: number | null;
+    band: Band;
+    weights_used: number;
+    weights_total: number;
+    unmeasured: string[];
+  };
   pillars: Pillar[];
   sop: {
     score: number | null;
@@ -75,6 +104,8 @@ export interface OutletHealth {
     dragged_down_by: { key: string; label: string; display: string } | null;
     detail: Record<string, unknown>;
   };
+  inventory: PillarBlock;
+  guest: PillarBlock;
   trend: { business_date: string; score: number; approved: number }[];
 }
 
