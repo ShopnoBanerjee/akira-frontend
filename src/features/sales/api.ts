@@ -7,12 +7,24 @@ export type UploadRow = components["schemas"]["UploadRow"];
 export type OrderRow = components["schemas"]["OrderRow"];
 export type DailyTotal = components["schemas"]["DailyTotal"];
 export type ItemSummaryRow = components["schemas"]["ItemSummaryRow"];
+export type ForecastDay = components["schemas"]["ForecastDay"];
+export type ForecastEventRow = components["schemas"]["ForecastEventRow"];
+
+export interface ForecastAccuracy {
+  model: string;
+  weeks: number;
+  scored_days: number;
+  mape_all_horizons: number | null;
+  mape_day_ahead: number | null;
+  day_ahead_days: number;
+}
 
 const KEYS = {
   uploads: ["sales", "uploads"] as const,
   orders: ["sales", "orders"] as const,
   daily: ["sales", "daily"] as const,
   items: ["sales", "items"] as const,
+  forecast: ["sales", "forecast"] as const,
 };
 
 export function useUploads(outletId: string | null) {
@@ -53,6 +65,47 @@ export function useItemSummary(outletId: string | null) {
     queryKey: [...KEYS.items, outletId],
     queryFn: () => api.get<ItemSummaryRow[]>(`/sales/items?outlet_id=${outletId}`),
     enabled: outletId !== null,
+  });
+}
+
+export function useForecast(outletId: string | null) {
+  return useQuery({
+    queryKey: [...KEYS.forecast, outletId],
+    queryFn: () => api.get<ForecastDay[]>(`/sales/forecast?outlet_id=${outletId}`),
+    enabled: outletId !== null,
+  });
+}
+
+export function useForecastAccuracy(outletId: string | null) {
+  return useQuery({
+    queryKey: [...KEYS.forecast, "accuracy", outletId],
+    queryFn: () => api.get<ForecastAccuracy>(`/sales/forecast/accuracy?outlet_id=${outletId}`),
+    enabled: outletId !== null,
+  });
+}
+
+export function useForecastEvents(outletId: string | null) {
+  return useQuery({
+    queryKey: [...KEYS.forecast, "events", outletId],
+    queryFn: () => api.get<ForecastEventRow[]>(`/sales/forecast/events?outlet_id=${outletId}`),
+    enabled: outletId !== null,
+  });
+}
+
+export function useCreateForecastEvent(outletId: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { event_date: string; multiplier: number; label: string }) =>
+      api.post<ForecastEventRow>("/sales/forecast/events", { ...body, outlet_id: outletId }),
+    onSuccess: () => void client.invalidateQueries({ queryKey: KEYS.forecast }),
+  });
+}
+
+export function useDeleteForecastEvent() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (eventId: string) => api.delete(`/sales/forecast/events/${eventId}`),
+    onSuccess: () => void client.invalidateQueries({ queryKey: KEYS.forecast }),
   });
 }
 

@@ -18,6 +18,7 @@ import {
   useUploads,
   type UploadRow,
 } from "./api";
+import { ForecastSection } from "./ForecastSection";
 
 /**
  * Petpooja sales ingestion.
@@ -214,6 +215,8 @@ export function SalesPage() {
           </p>
         </>
       )}
+
+      {outletId && <ForecastSection outletId={outletId} />}
 
       {/* --- Bills ------------------------------------------------------ */}
       {day && (

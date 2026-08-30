@@ -847,6 +847,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sales/forecast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The baseline forecast for the coming days
+         * @description Spec 5.1's baseline: median of the last four same weekdays, times a
+         *     clamped 14-day trend, times any manual event flag. Every row carries its
+         *     working — the sample dates, the factor, the multiplier — because a
+         *     forecast a manager cannot check is one they learn to ignore.
+         *
+         *     This is the LIVE view; the nightly job stores the same numbers so
+         *     accuracy is scored against what was predicted in advance.
+         */
+        get: operations["forecast_sales_forecast_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales/forecast/accuracy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How the stored forecasts scored against reality
+         * @description MAPE against the rows the nightly job stored BEFORE those days
+         *     traded. The spec's graduation rule reads from here: a learned model may
+         *     replace the baseline only when this history says it genuinely loses.
+         */
+        get: operations["forecast_accuracy_sales_forecast_accuracy_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales/forecast/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Event flags in the forecast window */
+        get: operations["forecast_events_sales_forecast_events_get"];
+        put?: never;
+        /**
+         * Flag an event before it happens
+         * @description The manual override in the spec's formula: "Durga Puja weekend,
+         *     expect 1.3x", written down in advance. Outlet-scoped, or group-wide
+         *     when no outlet is named.
+         */
+        post: operations["create_forecast_event_sales_forecast_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales/forecast/events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove an event flag */
+        delete: operations["delete_forecast_event_sales_forecast_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sop/runs/today": {
         parameters: {
             query?: never;
@@ -1901,6 +1989,64 @@ export interface components {
             role: string;
             /** Has Pin */
             has_pin: boolean;
+        };
+        /** ForecastDay */
+        ForecastDay: {
+            /**
+             * Target Date
+             * Format: date
+             */
+            target_date: string;
+            /** Net Paise */
+            net_paise: number | null;
+            /** Covers */
+            covers: number | null;
+            /** Reason */
+            reason: string | null;
+            /** Components */
+            components: {
+                [key: string]: unknown;
+            };
+        };
+        /** ForecastEventCreate */
+        ForecastEventCreate: {
+            /** Outlet Id */
+            outlet_id?: string | null;
+            /**
+             * Event Date
+             * Format: date
+             */
+            event_date: string;
+            /** Multiplier */
+            multiplier: number;
+            /** Label */
+            label: string;
+        };
+        /** ForecastEventRow */
+        ForecastEventRow: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Outlet Id */
+            outlet_id: string | null;
+            /**
+             * Event Date
+             * Format: date
+             */
+            event_date: string;
+            /** Multiplier */
+            multiplier: number;
+            /** Label */
+            label: string;
+            /** Created By Name */
+            created_by_name?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /**
          * Frequency
@@ -4540,6 +4686,171 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ItemSummaryRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    forecast_sales_forecast_get: {
+        parameters: {
+            query: {
+                outlet_id: string;
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastDay"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    forecast_accuracy_sales_forecast_accuracy_get: {
+        parameters: {
+            query: {
+                outlet_id: string;
+                weeks?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    forecast_events_sales_forecast_events_get: {
+        parameters: {
+            query: {
+                outlet_id: string;
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastEventRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_forecast_event_sales_forecast_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForecastEventCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastEventRow"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_forecast_event_sales_forecast_events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
