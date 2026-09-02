@@ -7,6 +7,7 @@ import { LoginPage } from "@/features/auth/LoginPage";
 import { ROLE_LABELS, canOpenManagement, defaultShellFor } from "@/features/auth/types";
 import { DevicesPage } from "@/features/admin/devices/DevicesPage";
 import { InventoryPage } from "@/features/admin/inventory/InventoryPage";
+import { RecipesPage } from "@/features/admin/inventory/RecipesPage";
 import { CountReviewPage } from "@/features/inventory/counts/CountReviewPage";
 import { RequisitionPage } from "@/features/inventory/counts/RequisitionPage";
 import { StockCountsPage } from "@/features/inventory/counts/StockCountsPage";
@@ -151,6 +152,7 @@ export function Router() {
     else if (pathname.startsWith("/app/settings/outlets")) page = <OutletsPage />;
     else if (pathname.startsWith("/app/settings/users")) page = <UsersPage />;
     else if (pathname.startsWith("/app/settings/devices")) page = <DevicesPage />;
+    else if (pathname.startsWith("/app/settings/recipes")) page = <RecipesPage />;
     else if (pathname.startsWith("/app/settings/inventory")) page = <InventoryPage />;
     else if (pathname.startsWith("/app/settings/jobs")) page = <JobsPage />;
     else if (pathname.startsWith("/app/settings")) page = <SettingsPage />;

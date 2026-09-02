@@ -394,6 +394,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/inventory/recipes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every recipe, with its ingredient lines */
+        get: operations["list_recipes_inventory_recipes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inventory/recipes/unmapped": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sold menu items with no recipe yet
+         * @description The worklist, ordered by units sold — map the ramen that sells thirty
+         *     a night before the seasonal special. Theoretical consumption only counts
+         *     what is mapped, so this list is the honesty gap made visible.
+         */
+        get: operations["unmapped_inventory_recipes_unmapped_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inventory/recipes/{menu_item_name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Create or replace one dish's recipe
+         * @description Lines are replaced wholesale — a recipe is one fact about one dish.
+         *     The name must match what Petpooja prints on bills; the unmapped list is
+         *     where those exact strings come from.
+         */
+        put: operations["save_recipe_inventory_recipes__menu_item_name__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inventory/recipes/{recipe_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a recipe */
+        delete: operations["delete_recipe_inventory_recipes__recipe_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/inventory/counts": {
         parameters: {
             query?: never;
@@ -2507,6 +2585,58 @@ export interface components {
             /** Fail Count */
             fail_count: number;
         };
+        /** Recipe */
+        Recipe: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Menu Item Name */
+            menu_item_name: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Notes */
+            notes: string | null;
+            /** Lines */
+            lines: components["schemas"]["RecipeLineOut"][];
+        };
+        /** RecipeLineIn */
+        RecipeLineIn: {
+            /**
+             * Item Id
+             * Format: uuid
+             */
+            item_id: string;
+            /** Qty Per Unit */
+            qty_per_unit: number;
+        };
+        /** RecipeLineOut */
+        RecipeLineOut: {
+            /**
+             * Item Id
+             * Format: uuid
+             */
+            item_id: string;
+            /** Item Name */
+            item_name: string;
+            /** Unit */
+            unit: string;
+            /** Qty Per Unit */
+            qty_per_unit: number;
+        };
+        /** RecipeSave */
+        RecipeSave: {
+            /** Lines */
+            lines: components["schemas"]["RecipeLineIn"][];
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
         /** ReferencePhoto */
         ReferencePhoto: {
             /** Id */
@@ -2857,6 +2987,15 @@ export interface components {
             critical_count: number;
             /** Assignment Count */
             assignment_count: number;
+        };
+        /** UnmappedName */
+        UnmappedName: {
+            /** Item Name */
+            item_name: string;
+            /** Units */
+            units: number | null;
+            /** Last Seen */
+            last_seen: unknown;
         };
         /** UpdateAssignmentRequest */
         UpdateAssignmentRequest: {
@@ -3900,6 +4039,116 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Item"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_recipes_inventory_recipes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"][];
+                };
+            };
+        };
+    };
+    unmapped_inventory_recipes_unmapped_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnmappedName"][];
+                };
+            };
+        };
+    };
+    save_recipe_inventory_recipes__menu_item_name__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                menu_item_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecipeSave"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_recipe_inventory_recipes__recipe_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipe_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

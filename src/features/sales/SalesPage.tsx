@@ -65,9 +65,10 @@ export function SalesPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Sales</h1>
           <p className="mt-1 max-w-2xl text-sm text-akira-ink/55">
             Upload a Petpooja <span className="font-mono text-xs">Orders Master Report</span>{" "}
-            (bills) or <span className="font-mono text-xs">Order Listing</span> (item names per
-            bill) — the file says which it is. Bills are filed by trading day, so a bill struck at
-            00:45 counts towards the night before. Sending the same file twice changes nothing.
+            (bills), <span className="font-mono text-xs">Order Listing</span> (item names per bill)
+            or <span className="font-mono text-xs">Item Report: Day Wise</span> (true units per day)
+            — the file says which it is. Bills are filed by trading day, so a bill struck at 00:45
+            counts towards the night before. Sending the same file twice changes nothing.
           </p>
         </div>
         {outlets && outlets.length > 1 && (
@@ -353,9 +354,9 @@ function Dropzone({
           {upload.isPending ? "Uploading…" : "Drop a Petpooja export here"}
         </p>
         <p className="max-w-md text-xs text-akira-ink/50">
-          Orders → Master Report or Order Listing, exported as .xlsx. Parsing runs in the
-          background; the row below will settle on its own. Upload the master first — the listing
-          decorates bills it already knows.
+          Any of the three supported reports, exported as .xlsx. Parsing runs in the background; the
+          row below will settle on its own. Upload the master first — the listing decorates bills it
+          already knows.
         </p>
         <input
           ref={input}

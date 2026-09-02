@@ -180,6 +180,43 @@ export function useInventoryItems(filters?: { departmentId?: string; search?: st
   });
 }
 
+export type Recipe = components["schemas"]["Recipe"];
+export type UnmappedName = components["schemas"]["UnmappedName"];
+export type RecipeSave = components["schemas"]["RecipeSave"];
+
+const RECIPE_KEYS = { all: ["inventory", "recipes"] as const };
+
+export function useRecipes() {
+  return useQuery({
+    queryKey: RECIPE_KEYS.all,
+    queryFn: () => api.get<Recipe[]>("/inventory/recipes"),
+  });
+}
+
+export function useUnmappedNames() {
+  return useQuery({
+    queryKey: [...RECIPE_KEYS.all, "unmapped"],
+    queryFn: () => api.get<UnmappedName[]>("/inventory/recipes/unmapped"),
+  });
+}
+
+export function useSaveRecipe() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ menuItemName, body }: { menuItemName: string; body: RecipeSave }) =>
+      api.put(`/inventory/recipes/${encodeURIComponent(menuItemName)}`, body),
+    onSuccess: () => void client.invalidateQueries({ queryKey: RECIPE_KEYS.all }),
+  });
+}
+
+export function useDeleteRecipe() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (recipeId: string) => api.delete(`/inventory/recipes/${recipeId}`),
+    onSuccess: () => void client.invalidateQueries({ queryKey: RECIPE_KEYS.all }),
+  });
+}
+
 export function useCreateInventoryItem() {
   const client = useQueryClient();
   return useMutation({

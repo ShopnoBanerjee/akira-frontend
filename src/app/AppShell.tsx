@@ -17,6 +17,7 @@ const NAV = [
   { label: "People", to: "/app/settings/users", ready: true },
   { label: "Tablets", to: "/app/settings/devices", ready: true },
   { label: "Inventory", to: "/app/settings/inventory", ready: true },
+  { label: "Recipes", to: "/app/settings/recipes", ready: true },
   { label: "Settings", to: "/app/settings", ready: true },
   { label: "Job Runs", to: "/app/settings/jobs", ready: true },
 ];
