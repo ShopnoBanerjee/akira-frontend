@@ -30,3 +30,12 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Business data — this repo is PUBLIC. See the backend .gitignore for why.
+*.xlsx
+*.xls
+*.csv
+data/
+exports/
+uploads/
+sales-data/
