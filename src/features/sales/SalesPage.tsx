@@ -405,6 +405,14 @@ function UploadCard({
               </span>
             )}
           </p>
+          {/* What the file said it was. Shown because it is the string to
+              copy into the expected-restaurant setting, and because an
+              unexpected name here is the whole point of recording it. */}
+          {upload.restaurant_name && (
+            <p className="mt-0.5 truncate text-xs text-akira-ink/45">
+              Restaurant: <span className="text-akira-ink/70">{upload.restaurant_name}</span>
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <span

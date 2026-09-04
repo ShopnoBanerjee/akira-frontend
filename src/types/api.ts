@@ -3172,6 +3172,8 @@ export interface components {
             adapter_version: string | null;
             /** Parsed Net Paise */
             parsed_net_paise: number | null;
+            /** Restaurant Name */
+            restaurant_name?: string | null;
             /** Uploaded By Name */
             uploaded_by_name: string | null;
             /**
