@@ -45,6 +45,13 @@ pnpm test
 pnpm build
 ```
 
+## Deploy
+
+A static build. `public/_headers` and `public/_redirects` configure
+Cloudflare Pages or Netlify; `vercel.json` configures Vercel. Set the three
+`VITE_*` variables in the host's project settings. The API repo's
+`docs/RUNBOOK_DEPLOY.md` §3 has the values and the CSP note.
+
 ## API types
 
 `src/types/api.ts` is generated from `openapi.json`, which is copied from the

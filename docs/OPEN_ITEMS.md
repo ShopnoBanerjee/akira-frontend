@@ -8,7 +8,7 @@ are deciding what to pick up.
 This is not a bug list. Nothing here is broken; broken things get fixed, not
 filed. It is the set of deliberate gaps, and it should shrink.
 
-Last reviewed: 27 Aug 2026, after P9a.
+Last reviewed: 6 Sep 2026, after the production-readiness pass (P23).
 
 **Keep it honest.** When you close one, delete the entry rather than marking it
 done — the file is only useful if everything in it is still true. When you open
@@ -21,7 +21,8 @@ one, say what would unblock it, not just what is missing.
 ### The Anthropic vision path has never run
 
 `ANTHROPIC_API_KEY` is not set on the build machine, so `AI_REVIEW_PROVIDER` is
-`groq` (D13). The pipeline is proven end to end against a real model — a grimy
+`openai` — Gemini's free tier through its OpenAI-compatible layer (D28). The
+pipeline is proven end to end against a real model — a grimy
 sink judged against that outlet's own standard came back `fail` at confidence
 1.0, wrote its `run_item_ai_reviews` row, raised `ai_mismatch` and rendered on
 the review screen — but the line that has never executed is
@@ -32,12 +33,13 @@ untested is the Anthropic transport specifically.
 
 **Unblocked by:** setting `ANTHROPIC_API_KEY` in `akira-backend/.env` and
 flipping `AI_REVIEW_PROVIDER=anthropic`. Re-reviewing a photo then writes a
-*second* row rather than overwriting the Groq one — the table is keyed on
+*second* row rather than overwriting the existing one — the table is keyed on
 `(run_item_id, model, prompt_version)` — so the two verdicts can be compared
 side by side, which is worth doing once.
 
-**Also:** the Groq key currently in `.env` arrived through a chat transcript
-and should be rotated in the Groq console.
+**Also:** Groq is gone from the code and from `.env` (D28); the key that had
+leaked through a chat transcript should still be **revoked in the Groq
+console** — nothing here uses it, but it is live until someone does that.
 
 ### The daily digest does not send mail
 
@@ -59,8 +61,15 @@ address on the recipient list.
 
 | Outlet | Captured | Photo-requiring items |
 |---|---:|---:|
-| AKR-NT01 (New Town) | 2 | 18 |
-| AKR-DEV02 (Dev Outlet 2) | 0 | 18 |
+| AKR-NT01 (AKIRA Safuipara) | 0 | 18 |
+| AKR-DEV02 (Dev Outlet 2, synthetic) | 0 | 18 |
+
+The two Safuipara standards that had been captured were lost with the
+`sop-photos` bucket when the Sydney project was paused before Storage could
+be copied (5 Sep 2026); their rows are inactive, not deleted. So were 471
+photos on the seeded demo runs — those screens now say "photo unavailable",
+which is the truth. If the Sydney project can ever be resumed, the objects
+are still in its bucket and `scripts/copy_storage.py` recovers them.
 
 The AI reviewer compares a submitted photo against that outlet's own standard.
 Without one it judges on the item's written instruction alone and is told to
@@ -88,60 +97,55 @@ pre-aggregated. There is nothing to hang `order_id` on (D15).
 Nothing in Stage 1 reads the table. The Sales pillar of the health card is
 Stage 2, and it needs bill-level totals, which `sales_orders` has.
 
-**Unblocked by:** finding out whether this Petpooja plan can export an
-order-wise or bill-wise item report. If it can, that is a second adapter beside
-`petpooja.orders.v1` and a straightforward one. If it cannot, the decision to
-make later is whether item-level analysis is worth relaxing `order_id` and
-storing period aggregates under a table whose name would stop describing its
-contents.
+**Partially unblocked, 27 Aug 2026.** The Order Listing report (checked
+against a real export) DOES carry a bill number — `Order No.` — with an
+`Items` column beside it. But the column is a comma-joined list of item
+*names*: no per-line quantity, no per-line price. So `sales_order_items`
+still cannot be filled honestly from it — a name appearing once could be
+quantity three.
+
+**Resolved as far as Petpooja allows, 29 Aug 2026 (P14).** The
+`petpooja.listing.v1` adapter ingests names-per-bill into
+`sales_order_items`, joined to the master bill on `Order No.` =
+`external_bill_no` (verified: all 89 orders of the real export matched,
+amounts to the paisa). Quantity and price are NULL by migration 0017 — the
+export does not carry them, and a default of 0 would lie. What remains open,
+and stays here:
+
+- **Units sold are still unknown.** "On N bills" is the honest unit until a
+  true line-item export exists; none of the six report types checked carries
+  one.
+- **Bill names are Petpooja's short names.** The live reconciliation against
+  the Item Wise report matched 23 of 25 names exactly; the other two are
+  aliases ("Donburi Chicken" on bills vs "Chicken Karaage Donburi" in the
+  catalogue). Any future name-level join needs the same alias treatment the
+  inventory Mapper gives stock sheets.
 
 ---
 
-## Housekeeping, queued for P10
+## Waiting for go-live day
 
-### Six photos will never verify
+### The API is not deployed; the frontend is not hosted
 
-The photos uploaded during P5 and P6 are 262-byte stubs, not decodable images.
-They carry plausible `photo_bytes` values, which is why nobody noticed until
-P7 downloaded one. `process_photo` raises `UndecodableImage` on them, the
-failure lands in `job_runs`, and the item stays unprocessed — which the review
-screen shows as "not checked yet" rather than clean. That is the honest
-rendering, and it is permanent for these six.
+Everything needed is in the repos — `Dockerfile`, `fly.toml` (region `bom`),
+the production guard, `public/_headers` / `vercel.json` for the web — and
+`docs/RUNBOOK_DEPLOY.md` is the order to do it in. What is missing is an
+account on Fly.io and on a CDN host, and about an hour.
 
-**Unblocked by:** deciding whether to clear `photo_path` on those rows (the
-runs then read as photoless, which is also true) or to leave them as a visible
-scar. Do it as part of the P10 seed refresh, not before.
+**Unblocked by:** the owner following RUNBOOK_DEPLOY sections 1–3. Section 1
+comes first: a real owner account has to exist before anything else, because
+`owner@akira.test` is deleted at go-live.
 
-### Two business dates were materialised by hand
+### The synthetic data is still live
 
-2026-08-25 and 2026-08-28 were created during P7 testing rather than by the
-05:00 job. 08-25 is almost entirely `missed`, because nothing was ever going to
-be done on a day invented after the fact. Any dashboard period spanning it
-reads worse than the outlet deserves.
+`AKR-DEV02`, the seeded runs at Safuipara, the eleven `@akira.test` accounts
+and their `1111`-style PINs. By the owner's instruction they stay until
+production. `scripts/prod_cutover.py` removes exactly that set and nothing
+else, is a dry run unless told otherwise, refuses without a real owner
+account, and is rehearsed by `tests/test_prod_cutover.py` against a fresh
+schema.
 
-**Unblocked by:** the P10 realistic 8-week seed dataset, which should replace
-this data wholesale rather than patch it.
-
----
-
-## Watch, not yet broken
-
-### The CI actions are on a deprecated Node
-
-Both workflows warn:
-
-> Node.js 20 is deprecated. The following actions target Node.js 20 but are
-> being forced to run on Node.js 24: `actions/checkout@v4`,
-> `actions/setup-node@v4`, `pnpm/action-setup@v4`.
-
-CI is green; GitHub is already forcing the newer runtime. It will stop being a
-warning at some point.
-
-**Unblocked by:** bumping the action majors — but do it on its own, as a
-deliberate change, so that if a bump breaks something the failure is
-unambiguous. It was left alone on 27 Aug specifically because backend CI had
-just been made green after eight epics red, and stacking an unrelated CI change
-on top of that would have muddied the signal.
+**Unblocked by:** go-live day. RUNBOOK_DEPLOY §5 is the checklist.
 
 ---
 
@@ -151,6 +155,56 @@ on top of that would have muddied the signal.
   clutter the outlet pickers. They are soft-deleted and inactive, and every
   query filters them. This was asserted as a problem in an earlier draft of
   HANDOFF.md without being checked; it is not one.
-- **There is no blended outlet health score**, and that is D14, not an
-  omission. Stage 1 measures one of four pillars; a number built from a quarter
-  of the evidence would be worse than none.
+- **The blended health score exists**, and D22 is why. D14 held it back
+  while Stage 1 measured one pillar of four; P15 built the other three, so the
+  blend now runs over whatever is actually measured and renormalises. The
+  inventory pillar stays dark until an outlet has its first confirmed stock
+  count — measured-or-absent, never a zero standing in for no evidence. This
+  file claimed the opposite until 4 Sep 2026; `app/domains/dashboard/health.py`
+  is the answer, not this paragraph.
+- **A restaurant-name guard on sales uploads is not missing.** Every adapter
+  reads the export's `Restaurant Name:` preamble, and it is checked against
+  `sales.petpooja_restaurant_name` before anything is stored or written (D25).
+  Two things about it are deliberate and should not be "fixed":
+  - It **ships unarmed** — an empty setting accepts any name — so it could
+    land without taking sales ingestion down. **Armed globally to `Akira` on
+    5 Sep 2026**, which is what all three real Petpooja exports carry. If an
+    export is ever refused because Petpooja's account name was edited, copy
+    the name off the upload card into Settings → Sales rather than clearing
+    the setting.
+  - It catches the wrong **restaurant**, never the wrong **outlet**. Both
+    outlets sit under one Petpooja account and print the same name; nothing
+    in the file tells them apart, which is why the uploader picks the outlet
+    by hand.
+
+---
+
+## Waiting on people
+
+### The restaurant guard is built but not armed
+
+`sales.petpooja_restaurant_name` is empty, so uploads are accepted from any
+restaurant (D25). Nothing is wrong until somebody uploads the wrong file —
+and the point of the guard is that nothing *looks* wrong then either.
+
+**The value to use is `Akira`** — read off all three real exports already in
+Storage (two Orders Master Reports and one Order Listing), and backfilled onto
+`data_uploads.restaurant_name` so the upload cards show it.
+
+**Unblocked by:** setting Settings → Sales → "Expected Petpooja restaurant
+name" to exactly `Akira`. Left unarmed on purpose rather than switched on
+here, for one reason: no Akira *Item Report: Day Wise* export exists yet, so
+whether Petpooja prints the same account name on that report type is
+unverified. If it prints something else, arming now would refuse the very
+export this project is waiting for. Arm it once one has landed — or arm it
+today and expect to widen it if that upload bounces.
+
+### An Akira Item Report: Day Wise export (P17)
+
+The adapter, recipes and theoretical-consumption arithmetic are live and
+tested, but no Akira export of this report has been uploaded yet — the
+shape was established from an older export of a different restaurant. Until
+one arrives, `sales_item_days` is empty and every dependent surface
+(variance component, zero-sales anomaly, true units) reads "pending" with
+its reason. Export it from Petpooja (Reports → Item Report: Day Wise) for
+the same period the master covers and drop it on the Sales page.
