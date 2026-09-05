@@ -10,8 +10,10 @@ export function describeTraining(p: PersonTraining | undefined, today = new Date
       return `Skipped ${shortDate(p.skipped_at, today)}`;
     case "in_progress":
       return `Step ${p.last_step} of ${p.total_steps ?? "?"}`;
-    case "reset":
-      return p.triggered_by_name ? `Restart by ${p.triggered_by_name}` : "Restart requested";
+    case "reset": {
+      const who = p.reset_by_name ?? p.triggered_by_name;
+      return who ? `Restart by ${who}` : "Restart requested";
+    }
     default:
       return "Not yet";
   }

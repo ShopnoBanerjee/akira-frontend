@@ -42,7 +42,10 @@ export function UsersPage() {
     [training],
   );
   const [inviting, setInviting] = useState(false);
-  const [selected, setSelected] = useState<UserItem | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Always the live row: a saved change (role, PIN, delegation) must show
+  // in the open drawer, not a copy taken when Manage was tapped.
+  const selected = users?.find((u) => u.profile_id === selectedId) ?? null;
 
   const filtered = useMemo(() => {
     if (!users) return [];
@@ -143,7 +146,7 @@ export function UsersPage() {
                       <StatusDot active={person.is_active} />
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Button variant="ghost" onClick={() => setSelected(person)}>
+                      <Button variant="ghost" onClick={() => setSelectedId(person.profile_id)}>
                         Manage
                       </Button>
                     </td>
@@ -159,7 +162,7 @@ export function UsersPage() {
       <ManageDialog
         person={selected}
         training={selected ? trainingById.get(selected.profile_id) : undefined}
-        onClose={() => setSelected(null)}
+        onClose={() => setSelectedId(null)}
       />
     </main>
   );
@@ -450,8 +453,8 @@ function ManageDialog({
               training.status !== "skipped" && (
                 <p className="text-xs text-akira-ink/50">
                   Restart requested
-                  {training.triggered_by_name ? ` by ${training.triggered_by_name}` : ""}; the
-                  walkthrough runs at their next sign-in or PIN identify.
+                  {training.reset_by_name ? ` by ${training.reset_by_name}` : ""}; the walkthrough
+                  runs at their next sign-in or PIN identify.
                 </p>
               )}
             <div className="flex flex-wrap gap-2">

@@ -2911,6 +2911,8 @@ export interface components {
             triggered_by_name: string | null;
             /** Reset At */
             reset_at: string | null;
+            /** Reset By Name */
+            reset_by_name: string | null;
             /** Can Reset */
             can_reset: boolean;
         };

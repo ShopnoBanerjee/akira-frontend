@@ -115,9 +115,21 @@ describe("placeCard", () => {
     expect(p.left + card.width).toBeLessThanOrEqual(viewport.width - 12);
   });
 
-  it("centres vertically when the control fills the screen", () => {
-    const p = placeCard({ top: 10, left: 0, width: 400, height: 780 }, viewport, card);
-    expect(p.placement).toBe("centre");
+  it("takes the roomier side when neither fits whole, never centring on the control", () => {
+    // A tall card on a short viewport: neither above nor below has room.
+    const short = { width: 400, height: 500 };
+    const tall = { width: 340, height: 300 };
+    const low = placeCard({ top: 300, left: 10, width: 100, height: 40 }, short, tall);
+    expect(low.placement).toBe("above");
+    expect(low.top).toBe(12);
+    const high = placeCard({ top: 120, left: 10, width: 100, height: 40 }, short, tall);
+    expect(high.placement).toBe("below");
+    expect(high.top).toBe(172);
+    expect(high.top + tall.height).toBeLessThanOrEqual(short.height - 12);
+  });
+
+  it("still centres when there is nothing to point at, even on a short viewport", () => {
+    expect(placeCard(null, { width: 400, height: 500 }, card).placement).toBe("centre");
   });
 });
 
@@ -148,6 +160,7 @@ describe("describeTraining", () => {
     skipped_at: null,
     triggered_by_name: null,
     reset_at: null,
+    reset_by_name: null,
     can_reset: false,
   };
   const today = new Date("2026-09-06T12:00:00+05:30");
@@ -162,7 +175,7 @@ describe("describeTraining", () => {
         today,
       ),
     ).toBe("Done 6 Sept");
-    expect(describeTraining({ ...base, status: "reset", triggered_by_name: "Shopno" })).toBe(
+    expect(describeTraining({ ...base, status: "reset", reset_by_name: "Shopno" })).toBe(
       "Restart by Shopno",
     );
     expect(describeTraining({ ...base, status: "reset" })).toBe("Restart requested");

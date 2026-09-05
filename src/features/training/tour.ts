@@ -71,11 +71,18 @@ export function placeCard(
   if (above >= gap) {
     return { top: above, left, placement: "above" };
   }
-  return {
-    top: Math.max(gap, (viewport.height - card.height) / 2),
-    left,
-    placement: "centre",
-  };
+  // Neither side has room for the whole card. Take the roomier side and let
+  // the card run to the viewport edge rather than sit on the control.
+  const roomBelow = viewport.height - (target.top + target.height);
+  const roomAbove = target.top;
+  if (roomBelow >= roomAbove) {
+    return {
+      top: Math.min(below, Math.max(gap, viewport.height - card.height - gap)),
+      left,
+      placement: "below",
+    };
+  }
+  return { top: gap, left, placement: "above" };
 }
 
 /** Pad a target rectangle so the spotlight breathes around the control. */

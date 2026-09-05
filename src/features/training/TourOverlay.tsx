@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { navigate } from "@/app/navigate";
 import { ApiError } from "@/lib/api";
@@ -23,7 +23,8 @@ interface Props {
   optional?: boolean;
 }
 
-const CARD = { width: 340, height: 220 };
+//: Used until the card has been measured once.
+const CARD = { width: 340, height: 240 };
 const ANCHOR_TRIES = 25;
 const ANCHOR_INTERVAL_MS = 80;
 
@@ -64,6 +65,8 @@ export function Tour({ steps, version, canSkip, record, onDone, optional = false
   );
   const [target, setTarget] = useState<Rect | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [cardSize, setCardSize] = useState(CARD);
   const [viewport, setViewport] = useState({
     width: window.innerWidth,
     height: window.innerHeight,
@@ -108,7 +111,8 @@ export function Tour({ steps, version, canSkip, record, onDone, optional = false
       if (cancelled) return;
       const el = findAnchor(step.anchor);
       if (el) {
-        el.scrollIntoView({ block: "nearest", inline: "nearest" });
+        // Centre it, so there is room for the card on one side or the other.
+        el.scrollIntoView({ block: "center", inline: "nearest" });
         // Measure after the scroll settles.
         timer = window.setTimeout(() => !cancelled && setTarget(rectOf(el)), 60);
         return;
@@ -146,6 +150,27 @@ export function Tour({ steps, version, canSkip, record, onDone, optional = false
     [],
   );
 
+  // The card's real size, so placement never assumes. Text length differs
+  // per step and per language, and a phone wraps everything.
+  useLayoutEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      if (r.width && r.height) {
+        setCardSize((prev) =>
+          Math.abs(prev.width - r.width) < 1 && Math.abs(prev.height - r.height) < 1
+            ? prev
+            : { width: r.width, height: r.height },
+        );
+      }
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [step, lang]);
+
   // --- Moving ---------------------------------------------------------------
   function goNext() {
     if (!attempt || !step) return;
@@ -169,8 +194,8 @@ export function Tour({ steps, version, canSkip, record, onDone, optional = false
   }
 
   const card = useMemo(
-    () => placeCard(target ? spotlightRect(target) : null, viewport, CARD),
-    [target, viewport],
+    () => placeCard(target ? spotlightRect(target) : null, viewport, cardSize),
+    [target, viewport, cardSize],
   );
   const hole = target ? spotlightRect(target) : null;
   const l: Language = lang ?? "en";
@@ -248,6 +273,7 @@ export function Tour({ steps, version, canSkip, record, onDone, optional = false
       ) : (
         step && (
           <div
+            ref={cardRef}
             className="absolute w-[340px] max-w-[calc(100vw-24px)] rounded-xl bg-white p-5 shadow-2xl"
             style={{ top: card.top, left: card.left }}
             data-placement={card.placement}
