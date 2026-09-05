@@ -925,6 +925,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sales/menu-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The menu map, with the bill spellings that point at each item
+         * @description Brand-level: one menu across outlets (D29). Empty until an Item Wise
+         *     report has been uploaded.
+         */
+        get: operations["menu_items_sales_menu_items_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales/menu-items/aliases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Teach the menu map a spelling bills use
+         * @description One spelling maps to exactly one item, case-insensitively, forever.
+         *     Admin-level because it changes how every outlet's bills are read.
+         */
+        post: operations["add_menu_alias_sales_menu_items_aliases_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales/menu-items/aliases/{alias_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Forget a bill spelling */
+        delete: operations["delete_menu_alias_sales_menu_items_aliases__alias_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sales/menu-mix": {
         parameters: {
             query?: never;
@@ -1721,6 +1780,13 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AddMenuAliasRequest */
+        AddMenuAliasRequest: {
+            /** Alias */
+            alias: string;
+            /** Menu Item Name */
+            menu_item_name: string;
+        };
         /** AnswerItemRequest */
         AnswerItemRequest: {
             result: components["schemas"]["ItemResult"];
@@ -2407,6 +2473,32 @@ export interface components {
             /** Outlets */
             outlets: components["schemas"]["OutletSummary"][];
             device?: components["schemas"]["DeviceSummary"] | null;
+        };
+        /** MenuAlias */
+        MenuAlias: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Alias */
+            alias: string;
+        };
+        /** MenuItemRow */
+        MenuItemRow: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Category */
+            category: string;
+            /** Petpooja Code */
+            petpooja_code: string | null;
+            /** Aliases */
+            aliases: components["schemas"]["MenuAlias"][];
         };
         /** MenuMixCategory */
         MenuMixCategory: {
@@ -5035,6 +5127,90 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ItemSummaryRow"][];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    menu_items_sales_menu_items_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MenuItemRow"][];
+                };
+            };
+        };
+    };
+    add_menu_alias_sales_menu_items_aliases_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddMenuAliasRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_menu_alias_sales_menu_items_aliases__alias_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alias_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

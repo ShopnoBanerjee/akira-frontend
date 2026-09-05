@@ -10,6 +10,7 @@ export type ItemSummaryRow = components["schemas"]["ItemSummaryRow"];
 export type ForecastDay = components["schemas"]["ForecastDay"];
 export type ForecastEventRow = components["schemas"]["ForecastEventRow"];
 export type MenuMixResponse = components["schemas"]["MenuMixResponse"];
+export type MenuItemRow = components["schemas"]["MenuItemRow"];
 
 export interface ForecastAccuracy {
   model: string;
@@ -27,6 +28,7 @@ const KEYS = {
   items: ["sales", "items"] as const,
   forecast: ["sales", "forecast"] as const,
   menuMix: ["sales", "menu-mix"] as const,
+  menuItems: ["sales", "menu-items"] as const,
 };
 
 export function useUploads(outletId: string | null) {
@@ -75,6 +77,26 @@ export function useMenuMix(outletId: string | null) {
     queryKey: [...KEYS.menuMix, outletId],
     queryFn: () => api.get<MenuMixResponse>(`/sales/menu-mix?outlet_id=${outletId}`),
     enabled: outletId !== null,
+  });
+}
+
+export function useMenuItems() {
+  return useQuery({
+    queryKey: KEYS.menuItems,
+    queryFn: () => api.get<MenuItemRow[]>("/sales/menu-items"),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useAddMenuAlias() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { alias: string; menu_item_name: string }) =>
+      api.post<{ id: string; alias: string; menu_item: string }>("/sales/menu-items/aliases", body),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: KEYS.menuItems });
+      void client.invalidateQueries({ queryKey: KEYS.menuMix });
+    },
   });
 }
 

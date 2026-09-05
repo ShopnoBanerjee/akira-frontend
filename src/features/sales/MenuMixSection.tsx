@@ -1,7 +1,11 @@
+import { useState } from "react";
+
+import { Button } from "@/components/ui/primitives";
+import { ApiError } from "@/lib/api";
 import { formatPaise } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
-import { useMenuMix } from "./api";
+import { useAddMenuAlias, useMenuItems, useMenuMix } from "./api";
 
 /**
  * Category attach — the share of bills that carried a drink, a dessert, a
@@ -107,19 +111,22 @@ export function MenuMixSection({ outletId }: { outletId: string }) {
         ) : (
           <>Measured column is empty until an Order Listing has supplied item names per bill.</>
         )}
-        {measured.unmapped_item_names.length > 0 && (
-          <>
-            {" "}
-            <span className="text-akira-red">
-              {measured.unmapped_item_names.length} name
-              {measured.unmapped_item_names.length === 1 ? "" : "s"} on bills not in the menu map
-            </span>{" "}
-            ({measured.unmapped_item_names.slice(0, 5).join(", ")}
-            {measured.unmapped_item_names.length > 5 ? ", …" : ""}) — upload a newer Item Wise
-            report.
-          </>
-        )}
       </p>
+
+      {measured.unmapped_item_names.length > 0 && (
+        <div className="mt-3 rounded-lg border border-akira-red/30 bg-akira-red/5 p-3">
+          <p className="text-xs font-medium text-akira-red">
+            {measured.unmapped_item_names.length} name
+            {measured.unmapped_item_names.length === 1 ? "" : "s"} on bills the menu map does not
+            know. Each one lowers every measured rate until it is mapped.
+          </p>
+          <ul className="mt-2 flex flex-col gap-2">
+            {measured.unmapped_item_names.map((name) => (
+              <MapName key={name} name={name} />
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }
@@ -144,5 +151,48 @@ function ShareBar({ share, strong }: { share: number | null | undefined; strong:
       </div>
       <span className="tabular-nums">{pct(share)}</span>
     </div>
+  );
+}
+
+/** One unmapped bill spelling and the menu item it should mean. */
+function MapName({ name }: { name: string }) {
+  const items = useMenuItems();
+  const add = useAddMenuAlias();
+  const [target, setTarget] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <li className="flex flex-wrap items-center gap-2 text-sm">
+      <code className="rounded bg-white px-1.5 py-0.5 font-mono text-xs">{name}</code>
+      <span className="text-akira-ink/50">means</span>
+      <select
+        value={target}
+        onChange={(e) => setTarget(e.target.value)}
+        className="h-8 rounded-md border border-akira-ink/15 bg-white px-2 text-sm"
+        aria-label={`Menu item for ${name}`}
+      >
+        <option value="">Choose a menu item…</option>
+        {(items.data ?? []).map((i) => (
+          <option key={i.id} value={i.name}>
+            {i.category} · {i.name}
+          </option>
+        ))}
+      </select>
+      <Button
+        variant="primary"
+        disabled={!target || add.isPending}
+        onClick={() =>
+          add.mutate(
+            { alias: name, menu_item_name: target },
+            {
+              onError: (e) => setError(e instanceof ApiError ? e.problem.detail : e.message),
+            },
+          )
+        }
+      >
+        {add.isPending ? "Saving…" : "Map"}
+      </Button>
+      {error && <span className="text-xs text-akira-red">{error}</span>}
+    </li>
   );
 }
