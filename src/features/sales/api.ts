@@ -9,6 +9,7 @@ export type DailyTotal = components["schemas"]["DailyTotal"];
 export type ItemSummaryRow = components["schemas"]["ItemSummaryRow"];
 export type ForecastDay = components["schemas"]["ForecastDay"];
 export type ForecastEventRow = components["schemas"]["ForecastEventRow"];
+export type MenuMixResponse = components["schemas"]["MenuMixResponse"];
 
 export interface ForecastAccuracy {
   model: string;
@@ -25,6 +26,7 @@ const KEYS = {
   daily: ["sales", "daily"] as const,
   items: ["sales", "items"] as const,
   forecast: ["sales", "forecast"] as const,
+  menuMix: ["sales", "menu-mix"] as const,
 };
 
 export function useUploads(outletId: string | null) {
@@ -64,6 +66,14 @@ export function useItemSummary(outletId: string | null) {
   return useQuery({
     queryKey: [...KEYS.items, outletId],
     queryFn: () => api.get<ItemSummaryRow[]>(`/sales/items?outlet_id=${outletId}`),
+    enabled: outletId !== null,
+  });
+}
+
+export function useMenuMix(outletId: string | null) {
+  return useQuery({
+    queryKey: [...KEYS.menuMix, outletId],
+    queryFn: () => api.get<MenuMixResponse>(`/sales/menu-mix?outlet_id=${outletId}`),
     enabled: outletId !== null,
   });
 }
@@ -128,6 +138,7 @@ export function useUploadExport(outletId: string) {
       void client.invalidateQueries({ queryKey: KEYS.daily });
       void client.invalidateQueries({ queryKey: KEYS.orders });
       void client.invalidateQueries({ queryKey: KEYS.items });
+      void client.invalidateQueries({ queryKey: KEYS.menuMix });
     },
   });
 }

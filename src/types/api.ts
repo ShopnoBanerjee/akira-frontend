@@ -925,6 +925,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sales/menu-mix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Category attach: share of bills carrying each category
+         * @description The beverage-per-ticket, dessert-per-ticket numbers (D29), two ways
+         *     and labelled: Petpooja's own per-period count of bills carrying each
+         *     category, and the same thing measured on the bills whose items were
+         *     uploaded. Empty until a Category Wise report has been uploaded; the
+         *     measured half stays empty until an Item Wise report has taught the menu
+         *     map and an Order Listing has supplied names per bill.
+         */
+        get: operations["menu_mix_sales_menu_mix_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sales/forecast": {
         parameters: {
             query?: never;
@@ -2382,6 +2407,78 @@ export interface components {
             /** Outlets */
             outlets: components["schemas"]["OutletSummary"][];
             device?: components["schemas"]["DeviceSummary"] | null;
+        };
+        /** MenuMixCategory */
+        MenuMixCategory: {
+            /** Category */
+            category: string;
+            /** Orders */
+            orders: number;
+            /** Share Of Bills */
+            share_of_bills: number | null;
+            /** Items */
+            items: number;
+            /** Items Per Order */
+            items_per_order: number | null;
+            /** Net Sales Paise */
+            net_sales_paise: number;
+            /** Avg Spend Per Bill Paise */
+            avg_spend_per_bill_paise: number | null;
+            /** Share Of Net Pct */
+            share_of_net_pct: number | null;
+            /** Is Charge */
+            is_charge: boolean;
+        };
+        /** MenuMixMeasured */
+        MenuMixMeasured: {
+            /** From */
+            from?: string | null;
+            /** To */
+            to?: string | null;
+            /** Bills Measured */
+            bills_measured: number;
+            /** Categories */
+            categories: components["schemas"]["MenuMixMeasuredCategory"][];
+            /** Unmapped Item Names */
+            unmapped_item_names: string[];
+        };
+        /** MenuMixMeasuredCategory */
+        MenuMixMeasuredCategory: {
+            /** Category */
+            category: string;
+            /** Bills With */
+            bills_with: number;
+            /** Share Of Bills */
+            share_of_bills: number | null;
+        };
+        /** MenuMixReported */
+        MenuMixReported: {
+            /**
+             * Period Start
+             * Format: date
+             */
+            period_start: string;
+            /**
+             * Period End
+             * Format: date
+             */
+            period_end: string;
+            /** Bills In Period */
+            bills_in_period: number;
+            /** Categories */
+            categories: components["schemas"]["MenuMixCategory"][];
+        };
+        /** MenuMixResponse */
+        MenuMixResponse: {
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** Menu Items Known */
+            menu_items_known: number;
+            reported: components["schemas"]["MenuMixReported"] | null;
+            measured: components["schemas"]["MenuMixMeasured"];
         };
         /** OrderRow */
         OrderRow: {
@@ -4937,6 +5034,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ItemSummaryRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    menu_mix_sales_menu_mix_get: {
+        parameters: {
+            query: {
+                outlet_id: string;
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MenuMixResponse"];
                 };
             };
             /** @description Validation Error */

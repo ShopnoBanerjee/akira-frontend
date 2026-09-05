@@ -19,6 +19,7 @@ import {
   type UploadRow,
 } from "./api";
 import { ForecastSection } from "./ForecastSection";
+import { MenuMixSection } from "./MenuMixSection";
 
 /**
  * Petpooja sales ingestion.
@@ -218,6 +219,7 @@ export function SalesPage() {
       )}
 
       {outletId && <ForecastSection outletId={outletId} />}
+      {outletId && <MenuMixSection outletId={outletId} />}
 
       {/* --- Bills ------------------------------------------------------ */}
       {day && (
