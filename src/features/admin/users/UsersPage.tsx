@@ -13,6 +13,13 @@ import {
 } from "@/components/ui/primitives";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { ROLE_LABELS } from "@/features/auth/types";
+import {
+  usePeopleTraining,
+  useResetTraining,
+  useSetTrainingDelegate,
+  type PersonTraining,
+} from "@/features/training/api";
+import { describeTraining } from "@/features/training/people";
 import { ApiError } from "@/lib/api";
 import {
   useGrantableRoles,
@@ -29,6 +36,11 @@ import {
 export function UsersPage() {
   const [search, setSearch] = useState("");
   const { data: users, isPending, isError, refetch } = useUsers();
+  const { data: training } = usePeopleTraining();
+  const trainingById = useMemo(
+    () => new Map((training ?? []).map((t) => [t.profile_id, t])),
+    [training],
+  );
   const [inviting, setInviting] = useState(false);
   const [selected, setSelected] = useState<UserItem | null>(null);
 
@@ -93,6 +105,7 @@ export function UsersPage() {
                   <th className="px-4 py-2.5 font-semibold">Role</th>
                   <th className="px-4 py-2.5 font-semibold">Outlets</th>
                   <th className="px-4 py-2.5 font-semibold">PIN</th>
+                  <th className="px-4 py-2.5 font-semibold">Training</th>
                   <th className="px-4 py-2.5 font-semibold">Status</th>
                   <th className="px-4 py-2.5" />
                 </tr>
@@ -123,6 +136,9 @@ export function UsersPage() {
                     <td className="px-4 py-3 text-xs text-akira-ink/60">
                       {person.has_pin ? "Set" : "—"}
                     </td>
+                    <td className="px-4 py-3 text-xs text-akira-ink/60">
+                      <TrainingCell entry={trainingById.get(person.profile_id)} />
+                    </td>
                     <td className="px-4 py-3">
                       <StatusDot active={person.is_active} />
                     </td>
@@ -140,7 +156,11 @@ export function UsersPage() {
       </div>
 
       <InviteDialog open={inviting} onClose={() => setInviting(false)} />
-      <ManageDialog person={selected} onClose={() => setSelected(null)} />
+      <ManageDialog
+        person={selected}
+        training={selected ? trainingById.get(selected.profile_id) : undefined}
+        onClose={() => setSelected(null)}
+      />
     </main>
   );
 }
@@ -280,9 +300,28 @@ function InviteDialog({ open, onClose }: { open: boolean; onClose: () => void })
   );
 }
 
-function ManageDialog({ person, onClose }: { person: UserItem | null; onClose: () => void }) {
+function TrainingCell({ entry }: { entry: PersonTraining | undefined }) {
+  const done = entry?.status === "completed" || entry?.status === "skipped";
+  return (
+    <span className={done ? "font-medium text-health-green" : undefined}>
+      {describeTraining(entry)}
+    </span>
+  );
+}
+
+function ManageDialog({
+  person,
+  training,
+  onClose,
+}: {
+  person: UserItem | null;
+  training: PersonTraining | undefined;
+  onClose: () => void;
+}) {
   const { me } = useAuth();
   const update = useUpdateUser();
+  const resetTraining = useResetTraining();
+  const delegate = useSetTrainingDelegate();
   const setRole = useSetUserRole();
   const setPin = useSetUserPin();
   const { data: grantable } = useGrantableRoles();
@@ -390,6 +429,68 @@ function ManageDialog({ person, onClose }: { person: UserItem | null; onClose: (
               </p>
             </section>
           )}
+
+          <section className="flex flex-col gap-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-akira-ink/55">
+              Training
+            </p>
+            <p className="text-sm">
+              {describeTraining(training)}
+              {training?.version && training.status !== "reset" && (
+                <span className="ml-2 font-mono text-xs text-akira-ink/45">
+                  {training.version}
+                  {training.language
+                    ? ` · ${training.language === "bn" ? "বাংলা" : "English"}`
+                    : ""}
+                </span>
+              )}
+            </p>
+            {training?.reset_at &&
+              training.status !== "completed" &&
+              training.status !== "skipped" && (
+                <p className="text-xs text-akira-ink/50">
+                  Restart requested
+                  {training.triggered_by_name ? ` by ${training.triggered_by_name}` : ""}; the
+                  walkthrough runs at their next sign-in or PIN identify.
+                </p>
+              )}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                disabled={!training?.can_reset || resetTraining.isPending}
+                title={
+                  training?.can_reset
+                    ? undefined
+                    : "Only the owner, or a manager the owner has delegated, can restart training."
+                }
+                onClick={() =>
+                  resetTraining.mutate(person.profile_id, {
+                    onError,
+                    onSuccess: () => setError(null),
+                  })
+                }
+              >
+                {resetTraining.isPending ? "Restarting…" : "Restart training"}
+              </Button>
+            </div>
+            {me?.global_role === "owner" &&
+              (person.global_role === "ops_manager" || person.global_role === "outlet_manager") && (
+                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-akira-red"
+                    checked={person.can_restart_training}
+                    disabled={delegate.isPending}
+                    onChange={(e) =>
+                      delegate.mutate(
+                        { id: person.profile_id, enabled: e.target.checked },
+                        { onError, onSuccess: () => setError(null) },
+                      )
+                    }
+                  />
+                  May restart training for people at their outlets
+                </label>
+              )}
+          </section>
 
           <section className="flex flex-col gap-2">
             <p className="text-xs font-semibold uppercase tracking-wider text-akira-ink/55">

@@ -49,10 +49,11 @@ export function FloorHomePage() {
 
   return (
     <main className="flex flex-col gap-4 px-4 py-5">
-      <div className="flex items-center justify-between">
+      <div data-tour="floor-today" className="flex items-center justify-between">
         <h1 className="text-xl font-semibold tracking-tight">Today</h1>
         {isDevice && actor && (
           <button
+            data-tour="floor-switch"
             onClick={() => setActor(null)}
             className="min-h-[48px] rounded-lg px-3 text-sm font-semibold text-akira-blue active:bg-akira-blue/5"
           >
@@ -114,6 +115,7 @@ function RunCard({ run }: { run: RunListItem }) {
 
   return (
     <button
+      data-tour="floor-run-card"
       disabled={!openable}
       onClick={() => navigate(`/floor/run/${run.id}`)}
       className={cn(

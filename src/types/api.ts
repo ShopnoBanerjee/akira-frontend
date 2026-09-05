@@ -187,6 +187,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/{profile_id}/training-delegate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Let a manager restart other people's training (owner only)
+         * @description Restarting training is the owner's (D31). This hands it to one manager:
+         *     an operations manager may then restart anyone's, an outlet manager only
+         *     people at their own outlets. Floor roles cannot hold it.
+         */
+        put: operations["set_training_delegate_users__profile_id__training_delegate_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/outlets": {
         parameters: {
             query?: never;
@@ -1092,6 +1114,130 @@ export interface paths {
         post?: never;
         /** Remove an event flag */
         delete: operations["delete_forecast_event_sales_forecast_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/training/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether the walkthrough has to run for the person acting */
+        get: operations["my_status_training_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/training/me/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Begin the walkthrough, or resume the attempt already open */
+        post: operations["start_training_me_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/training/me/step": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record that a step was reached */
+        post: operations["step_training_me_step_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/training/me/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finish the walkthrough */
+        post: operations["complete_training_me_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/training/me/skip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Skip the walkthrough (owner only) */
+        post: operations["skip_training_me_skip_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/training/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Who has been through the walkthrough, and who has not */
+        get: operations["people_status_training_people_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/training/people/{profile_id}/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restart somebody's training; their next visit runs the walkthrough again
+         * @description The owner may restart anyone's. A manager may only when the owner has
+         *     delegated it to them (People page), and only for people at their outlets;
+         *     the service decides and refuses otherwise.
+         */
+        post: operations["reset_training_people__profile_id__reset_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2470,6 +2616,8 @@ export interface components {
             is_global: boolean;
             /** Has Pin */
             has_pin: boolean;
+            /** Can Restart Training */
+            can_restart_training: boolean;
             /** Outlets */
             outlets: components["schemas"]["OutletSummary"][];
             device?: components["schemas"]["DeviceSummary"] | null;
@@ -2720,6 +2868,52 @@ export interface components {
             /** Is Primary */
             is_primary: boolean;
         };
+        /**
+         * PersonTraining
+         * @description One row of the owner's 'who has been trained' view.
+         */
+        PersonTraining: {
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+            /** Full Name */
+            full_name: string;
+            global_role: components["schemas"]["UserRole"];
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Track
+             * @enum {string}
+             */
+            track: "management" | "floor";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "not_started" | "in_progress" | "completed" | "skipped" | "reset";
+            /** Version */
+            version: string | null;
+            /** Language */
+            language: ("en" | "bn") | null;
+            /** Last Step */
+            last_step: number;
+            /** Total Steps */
+            total_steps: number | null;
+            /** Started At */
+            started_at: string | null;
+            /** Completed At */
+            completed_at: string | null;
+            /** Skipped At */
+            skipped_at: string | null;
+            /** Triggered By Name */
+            triggered_by_name: string | null;
+            /** Reset At */
+            reset_at: string | null;
+            /** Can Reset */
+            can_reset: boolean;
+        };
         /** PhotoConfirmRequest */
         PhotoConfirmRequest: {
             /** Path */
@@ -2825,6 +3019,14 @@ export interface components {
              * @default true
              */
             is_active: boolean;
+        };
+        /** RecordRequest */
+        RecordRequest: {
+            /**
+             * Record Id
+             * Format: uuid
+             */
+            record_id: string;
         };
         /** ReferencePhoto */
         ReferencePhoto: {
@@ -3003,6 +3205,11 @@ export interface components {
             /** Outlet Id */
             outlet_id?: string | null;
         };
+        /** SetTrainingDelegateRequest */
+        SetTrainingDelegateRequest: {
+            /** Enabled */
+            enabled: boolean;
+        };
         /** SettingHistoryRow */
         SettingHistoryRow: {
             /**
@@ -3060,6 +3267,28 @@ export interface components {
             value: unknown;
             /** Is Set */
             is_set: boolean;
+        };
+        /** StartRequest */
+        StartRequest: {
+            /** Version */
+            version: string;
+            /** Total Steps */
+            total_steps: number;
+            /**
+             * Language
+             * @enum {string}
+             */
+            language: "en" | "bn";
+        };
+        /** StepRequest */
+        StepRequest: {
+            /**
+             * Record Id
+             * Format: uuid
+             */
+            record_id: string;
+            /** Step */
+            step: number;
         };
         /** SubmitRequest */
         SubmitRequest: {
@@ -3176,6 +3405,81 @@ export interface components {
             critical_count: number;
             /** Assignment Count */
             assignment_count: number;
+        };
+        /** TrainingRecord */
+        TrainingRecord: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+            /**
+             * Track
+             * @enum {string}
+             */
+            track: "management" | "floor";
+            /** Version */
+            version: string;
+            /** Language */
+            language: ("en" | "bn") | null;
+            /** Total Steps */
+            total_steps: number;
+            /** Last Step */
+            last_step: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "not_started" | "in_progress" | "completed" | "skipped" | "reset";
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Completed At */
+            completed_at: string | null;
+            /** Skipped At */
+            skipped_at: string | null;
+            /** Triggered By */
+            triggered_by: string | null;
+            /** Triggered By Name */
+            triggered_by_name: string | null;
+        };
+        /**
+         * TrainingStatus
+         * @description What the client needs to decide whether to run the tour right now.
+         */
+        TrainingStatus: {
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+            /** Full Name */
+            full_name: string;
+            role: components["schemas"]["UserRole"];
+            /**
+             * Track
+             * @enum {string}
+             */
+            track: "management" | "floor";
+            /** Version */
+            version: string;
+            /** Required */
+            required: boolean;
+            /** Can Skip */
+            can_skip: boolean;
+            record: components["schemas"]["TrainingRecord"] | null;
         };
         /** UnmappedName */
         UnmappedName: {
@@ -3396,6 +3700,8 @@ export interface components {
             is_active: boolean;
             /** Has Pin */
             has_pin: boolean;
+            /** Can Restart Training */
+            can_restart_training: boolean;
             /** Last Seen At */
             last_seen_at: string | null;
             /** Outlets */
@@ -3726,6 +4032,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SetPinRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserListItem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_training_delegate_users__profile_id__training_delegate_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetTrainingDelegateRequest"];
             };
         };
         responses: {
@@ -5408,6 +5749,236 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_status_training_me_get: {
+        parameters: {
+            query: {
+                /** @description The content version the client carries */
+                version: string;
+            };
+            header?: {
+                /** @description On a shared-tablet session: the assertion from /floor/identify. */
+                "X-Actor-Token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_training_me_start_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description On a shared-tablet session: the assertion from /floor/identify. */
+                "X-Actor-Token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    step_training_me_step_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description On a shared-tablet session: the assertion from /floor/identify. */
+                "X-Actor-Token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StepRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_training_me_complete_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description On a shared-tablet session: the assertion from /floor/identify. */
+                "X-Actor-Token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skip_training_me_skip_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description On a shared-tablet session: the assertion from /floor/identify. */
+                "X-Actor-Token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrainingRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    people_status_training_people_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonTraining"][];
+                };
+            };
+        };
+    };
+    reset_training_people__profile_id__reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonTraining"];
                 };
             };
             /** @description Validation Error */

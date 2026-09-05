@@ -142,7 +142,10 @@ function HealthCard({ health }: { health: OutletHealth }) {
 
   return (
     <>
-      <section className="mt-4 overflow-hidden rounded-lg border border-akira-ink/10 bg-white">
+      <section
+        data-tour="dashboard-health"
+        className="mt-4 overflow-hidden rounded-lg border border-akira-ink/10 bg-white"
+      >
         {/* --- Headline: the blended health score ----------------------- */}
         <div className="flex flex-wrap items-start justify-between gap-6 border-b border-akira-ink/8 p-6">
           <div>

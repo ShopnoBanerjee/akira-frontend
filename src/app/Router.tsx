@@ -26,6 +26,7 @@ import { ReferencePhotosPage } from "@/features/sop/reference/ReferencePhotosPag
 import { SalesPage } from "@/features/sales/SalesPage";
 import { FloorHomePage } from "@/features/floor/FloorHomePage";
 import { RunPage } from "@/features/floor/RunPage";
+import { FloorTrainingGate, ManagementTrainingGate } from "@/features/training/TrainingGate";
 import { AppShell } from "./AppShell";
 import { FloorShell } from "./FloorShell";
 
@@ -156,13 +157,21 @@ export function Router() {
     else if (pathname.startsWith("/app/settings/inventory")) page = <InventoryPage />;
     else if (pathname.startsWith("/app/settings/jobs")) page = <JobsPage />;
     else if (pathname.startsWith("/app/settings")) page = <SettingsPage />;
-    return <AppShell>{page}</AppShell>;
+    return (
+      <AppShell>
+        <ManagementTrainingGate>{page}</ManagementTrainingGate>
+      </AppShell>
+    );
   }
 
   if (pathname.startsWith("/floor")) {
     const runMatch = /^\/floor\/run\/([0-9a-f-]{36})/.exec(pathname);
     return (
-      <FloorShell>{runMatch?.[1] ? <RunPage runId={runMatch[1]} /> : <FloorHomePage />}</FloorShell>
+      <FloorShell>
+        <FloorTrainingGate>
+          {runMatch?.[1] ? <RunPage runId={runMatch[1]} /> : <FloorHomePage />}
+        </FloorTrainingGate>
+      </FloorShell>
     );
   }
 

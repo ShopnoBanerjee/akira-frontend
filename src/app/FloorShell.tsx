@@ -29,6 +29,7 @@ export function FloorShell({ children }: { children: ReactNode }) {
         <div className="text-right">
           <p className="text-[13px] font-semibold">{personLabel}</p>
           <button
+            data-tour="floor-handover"
             onClick={() => void signOut()}
             className="min-h-[48px] text-xs font-semibold text-akira-blue"
           >
