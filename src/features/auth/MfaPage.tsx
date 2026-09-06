@@ -38,14 +38,19 @@ export function MfaPage() {
         setStage({ kind: "failed", message: listError.message });
         return;
       }
-      const verified = data.totp.find((f) => f.status === "verified");
+      // listFactors() puts ONLY verified factors in `data.totp`; an enrolment
+      // that was started and abandoned appears solely in `data.all`. Reading
+      // `data.totp` for the cleanup below meant it never ran, so a second
+      // visit died on "a factor with the friendly name AKIRA Ops already
+      // exists" - one unscanned QR code locked an owner out of their own
+      // setup screen, with no way back except an administrator.
+      const totp = data.all.filter((f) => f.factor_type === "totp");
+      const verified = totp.find((f) => f.status === "verified");
       if (verified) {
         setStage({ kind: "verify", factorId: verified.id });
         return;
       }
-      // An earlier enrolment that never finished is dead weight; Supabase
-      // caps how many a user can hold, so clear them before starting anew.
-      for (const stale of data.totp.filter((f) => f.status !== "verified")) {
+      for (const stale of totp.filter((f) => f.status !== "verified")) {
         await supabase.auth.mfa.unenroll({ factorId: stale.id });
       }
       const { data: enrolled, error: enrolError } = await supabase.auth.mfa.enroll({
