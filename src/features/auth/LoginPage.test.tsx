@@ -1,15 +1,14 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 const signIn = vi.fn();
 vi.mock("./AuthProvider", () => ({ useAuth: () => ({ signIn }) }));
 
 import { LoginPage } from "./LoginPage";
 
-beforeEach(() => signIn.mockReset());
-
 describe("LoginPage", () => {
   it("trims the email when the field is left and on submit, never the password", () => {
+    signIn.mockClear();
     signIn.mockResolvedValue(undefined);
     render(<LoginPage />);
     const email = screen.getByLabelText<HTMLInputElement>(/email/i);
@@ -51,6 +50,7 @@ describe("LoginPage", () => {
   });
 
   it("does not reveal whether the address exists", async () => {
+    signIn.mockClear();
     signIn.mockImplementation(() => {
       throw new Error("Invalid login credentials");
     });
