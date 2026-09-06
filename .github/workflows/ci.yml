@@ -99,21 +99,25 @@ jobs:
 
       # The project is created on first run, so the dashboard's "connect a
       # repository" wizard is never used: that path builds and deploys on
-      # every push by itself, around the approval gate.
+      # every push by itself, around the approval gate. A plain shell step:
+      # the wrangler action runs each postCommands line as its own command,
+      # which broke an if-block on the first real run.
       - name: Ensure the Cloudflare Pages project exists
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages project list
-          postCommands: |
-            if ! wrangler pages project list | grep -q "${{ vars.CF_PAGES_PROJECT }}"; then
-              wrangler pages project create "${{ vars.CF_PAGES_PROJECT }}" --production-branch=main
-            fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_PAGES_PROJECT: ${{ vars.CF_PAGES_PROJECT }}
+        run: |
+          if pnpm dlx wrangler@3.90.0 pages project list 2>/dev/null | grep -q "$CF_PAGES_PROJECT"; then
+            echo "project $CF_PAGES_PROJECT exists"
+          else
+            pnpm dlx wrangler@3.90.0 pages project create "$CF_PAGES_PROJECT" --production-branch=main
+          fi
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
+          wranglerVersion: "3.90.0"
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=${{ vars.CF_PAGES_PROJECT }} --branch=main --commit-dirty=true
