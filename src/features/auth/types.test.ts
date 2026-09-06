@@ -6,10 +6,18 @@ import {
   ROLE_LABELS,
   canOpenManagement,
   defaultShellFor,
+  needsSecondFactor,
 } from "./types";
 import type { UserRole } from "./types";
 
-const ALL_ROLES: UserRole[] = ["owner", "ops_manager", "outlet_manager", "shift_lead", "staff"];
+const ALL_ROLES: UserRole[] = [
+  "owner",
+  "ops_manager",
+  "outlet_manager",
+  "shift_lead",
+  "staff",
+  "platform_admin",
+];
 
 describe("role definitions", () => {
   it("labels every role, so no raw enum value reaches the UI", () => {
@@ -58,5 +66,19 @@ describe("shell routing", () => {
     expect(canOpenManagement("staff")).toBe(false);
     expect(canOpenManagement("shift_lead")).toBe(false);
     expect(canOpenManagement("outlet_manager")).toBe(true);
+  });
+
+  it("sends the platform admin to /platform, and lets them read /app", () => {
+    expect(defaultShellFor("platform_admin")).toBe("/platform");
+    expect(canOpenManagement("platform_admin")).toBe(true);
+    expect(GLOBAL_ROLES).not.toContain("platform_admin");
+  });
+});
+
+describe("second factor", () => {
+  it("is owed only when required and not yet verified", () => {
+    expect(needsSecondFactor({ mfa_required: true, mfa_verified: false })).toBe(true);
+    expect(needsSecondFactor({ mfa_required: true, mfa_verified: true })).toBe(false);
+    expect(needsSecondFactor({ mfa_required: false, mfa_verified: false })).toBe(false);
   });
 });

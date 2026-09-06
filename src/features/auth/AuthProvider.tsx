@@ -5,13 +5,15 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { ApiError, api, setActor } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
-import type { Me } from "./types";
+import { needsSecondFactor, type Me } from "./types";
 
 export type AuthStatus =
   | "loading"
   | "signed-out"
   /** Signed in, but no active profile — an admin has to activate the account. */
   | "pending-activation"
+  /** Signed in with a password; this login must add its second factor (D33). */
+  | "mfa-required"
   | "ready";
 
 interface AuthContextValue {
@@ -45,7 +47,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const profile = await api.get<Me>("/users/me");
       setMe(profile);
       setPendingReason(null);
-      setStatus("ready");
+      // /users/me is the one call the API answers before the second factor;
+      // everything else would come back as an mfa-required problem.
+      setStatus(needsSecondFactor(profile) ? "mfa-required" : "ready");
     } catch (error) {
       setMe(null);
       if (error instanceof ApiError && error.isPendingActivation) {
@@ -56,6 +60,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       if (error instanceof ApiError && error.isUnauthenticated) {
         setStatus("signed-out");
+        return;
+      }
+      if (error instanceof ApiError && error.isMfaRequired) {
+        setStatus("mfa-required");
         return;
       }
       setPendingReason(error instanceof Error ? error.message : "Could not load your profile.");

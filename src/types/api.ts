@@ -209,6 +209,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/platform/organisations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every organisation on the platform */
+        get: operations["list_organisations_platform_organisations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/outlets": {
         parameters: {
             query?: never;
@@ -318,7 +335,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Departments (count stations) */
+        /**
+         * Departments (count stations)
+         * @description The organisation's departments, plus the starter kit's (D33).
+         */
         get: operations["list_departments_inventory_departments_get"];
         put?: never;
         post?: never;
@@ -665,8 +685,9 @@ export interface paths {
         };
         /**
          * Every setting with its current value
-         * @description The full registry, each key resolved to the value in force right now at
-         *     global scope. Grouped client-side by `group`.
+         * @description The full registry, each key resolved to the value in force right now for
+         *     the caller's organisation (D33); the platform's job times stay global.
+         *     Grouped client-side by `group`.
          */
         get: operations["list_settings_settings_get"];
         put?: never;
@@ -684,7 +705,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Every value this setting has held */
+        /**
+         * Every value this setting has held
+         * @description The organisation's rows for this key: its own, its outlets', and the
+         *     global ones that still apply to it.
+         */
         get: operations["setting_history_settings__key__history_get"];
         put?: never;
         post?: never;
@@ -956,8 +981,8 @@ export interface paths {
         };
         /**
          * The menu map, with the bill spellings that point at each item
-         * @description Brand-level: one menu across outlets (D29). Empty until an Item Wise
-         *     report has been uploaded.
+         * @description Organisation-level: one menu across its outlets (D29, D33). Empty until
+         *     an Item Wise report has been uploaded.
          */
         get: operations["menu_items_sales_menu_items_get"];
         put?: never;
@@ -1658,7 +1683,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** SOP categories */
+        /**
+         * SOP categories
+         * @description The organisation's categories plus the starter kit's (D33).
+         */
         get: operations["list_categories_sop_categories_get"];
         put?: never;
         post?: never;
@@ -2614,6 +2642,22 @@ export interface components {
             is_management: boolean;
             /** Is Global */
             is_global: boolean;
+            /**
+             * Is Platform Admin
+             * @default false
+             */
+            is_platform_admin: boolean;
+            organisation?: components["schemas"]["OrganisationSummary"] | null;
+            /**
+             * Mfa Required
+             * @default false
+             */
+            mfa_required: boolean;
+            /**
+             * Mfa Verified
+             * @default false
+             */
+            mfa_verified: boolean;
             /** Has Pin */
             has_pin: boolean;
             /** Can Restart Training */
@@ -2766,6 +2810,54 @@ export interface components {
             has_phone: boolean;
             /** Items */
             items: string[];
+        };
+        /** OrganisationRow */
+        OrganisationRow: {
+            /**
+             * Organisation Id
+             * Format: uuid
+             */
+            organisation_id: string;
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Onboarded At */
+            onboarded_at: string | null;
+            /** Max Outlets */
+            max_outlets: number;
+            /** Max People */
+            max_people: number;
+            /** Outlets */
+            outlets: number;
+            /** People */
+            people: number;
+            /** Owners */
+            owners: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * OrganisationSummary
+         * @description The tenant the caller belongs to (D33).
+         */
+        OrganisationSummary: {
+            /**
+             * Organisation Id
+             * Format: uuid
+             */
+            organisation_id: string;
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /** Onboarded */
+            onboarded: boolean;
         };
         /** OutletHealthRow */
         OutletHealthRow: {
@@ -3713,7 +3805,7 @@ export interface components {
          * UserRole
          * @enum {string}
          */
-        UserRole: "owner" | "ops_manager" | "outlet_manager" | "shift_lead" | "staff";
+        UserRole: "owner" | "ops_manager" | "outlet_manager" | "shift_lead" | "staff" | "platform_admin";
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -4088,6 +4180,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_organisations_platform_organisations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganisationRow"][];
                 };
             };
         };

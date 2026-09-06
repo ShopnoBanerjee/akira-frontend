@@ -61,7 +61,10 @@ function Footer({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="border-t border-akira-ink/10 px-5 py-4">
       <p className="truncate text-sm font-medium">{me?.full_name}</p>
-      <p className="text-xs text-akira-ink/50">{me ? ROLE_LABELS[me.global_role] : ""}</p>
+      <p className="text-xs text-akira-ink/50">
+        {me ? ROLE_LABELS[me.global_role] : ""}
+        {me?.organisation ? ` · ${me.organisation.name}` : ""}
+      </p>
       <div className="mt-2 flex items-center gap-4">
         <button
           data-tour="signout"

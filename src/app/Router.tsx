@@ -4,6 +4,8 @@ import { Spinner, Wordmark } from "@/components/Brand";
 import { redirect } from "./navigate";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { LoginPage } from "@/features/auth/LoginPage";
+import { MfaPage } from "@/features/auth/MfaPage";
+import { PlatformPage } from "@/features/platform/PlatformPage";
 import { ROLE_LABELS, canOpenManagement, defaultShellFor } from "@/features/auth/types";
 import { DevicesPage } from "@/features/admin/devices/DevicesPage";
 import { InventoryPage } from "@/features/admin/inventory/InventoryPage";
@@ -126,7 +128,15 @@ export function Router() {
   if (status === "pending-activation") {
     return <PendingActivation reason={pendingReason} />;
   }
+  if (status === "mfa-required") {
+    return <MfaPage />;
+  }
   if (!me) return <Spinner label="Loading…" />;
+
+  if (pathname.startsWith("/platform")) {
+    if (!me.is_platform_admin) return <Forbidden intended={pathname} />;
+    return <PlatformPage />;
+  }
 
   const isManagement = canOpenManagement(me.global_role);
 

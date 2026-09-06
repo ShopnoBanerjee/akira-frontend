@@ -68,6 +68,11 @@ export class ApiError extends Error {
     return this.problem.type.endsWith("/pending-activation");
   }
 
+  /** Signed in, but this login must verify a second factor first (D33). */
+  get isMfaRequired(): boolean {
+    return this.problem.type.endsWith("/mfa-required");
+  }
+
   get isForbidden(): boolean {
     return this.status === 403;
   }
