@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -45,3 +49,69 @@ jobs:
           pnpm gen:api
           git diff --exit-code src/types/api.ts \
             || (echo "::error::src/types/api.ts is stale. Run pnpm gen:api and commit." && exit 1)
+
+  # ---------------------------------------------------------------------------
+  # Production: Cloudflare Pages. Runs only for a push to main that passed the
+  # checks, only when DEPLOY_ENABLED=true, and only after approval in the
+  # `production` environment. The VITE_* values are environment variables,
+  # not secrets - they ship inside the bundle by design. See the API repo's
+  # docs/RUNBOOK_DEPLOY.md section 3 for the one-time setup.
+  # ---------------------------------------------------------------------------
+  deploy:
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.WEB_URL }}
+    concurrency:
+      group: deploy-web
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build for production
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+        run: |
+          test -n "$VITE_SUPABASE_URL" -a -n "$VITE_SUPABASE_PUBLISHABLE_KEY" -a -n "$VITE_API_BASE_URL" \
+            || { echo "::error::Set VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY and VITE_API_BASE_URL as production environment variables."; exit 1; }
+          pnpm build
+          test -f dist/_headers -a -f dist/_redirects
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ vars.CF_PAGES_PROJECT }} --branch=main --commit-dirty=true
+
+      - name: Smoke the site
+        env:
+          WEB_URL: ${{ vars.WEB_URL }}
+        run: |
+          for i in $(seq 1 20); do
+            body=$(curl -fsS "$WEB_URL/" || true)
+            if echo "$body" | grep -q "<title>AKIRA Ops</title>"; then
+              curl -sSI "$WEB_URL/" | grep -i "content-security-policy" >/dev/null \
+                && echo "site up, CSP present" && exit 0
+              echo "site up but no CSP header - check public/_headers made it into dist"; exit 1
+            fi
+            sleep 6
+          done
+          echo "::error::The site did not serve the app within two minutes."; exit 1
