@@ -3,6 +3,10 @@ name: CI
 on:
   push:
     branches: [main]
+    # Doc mirrors synced from the API repo have nothing to check or deploy.
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
   pull_request:
   # A manual run from the Actions tab: the same checks, and a deploy to
   # approve, without a commit to hang it on.
