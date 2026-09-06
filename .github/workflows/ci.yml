@@ -122,17 +122,22 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=${{ vars.CF_PAGES_PROJECT }} --branch=main --commit-dirty=true
 
+      # Cloudflare applies _headers a few seconds after "Deployment complete",
+      # so both checks retry together: the first real deploy saw the page
+      # before its headers and failed on a one-shot header check.
       - name: Smoke the site
         env:
           WEB_URL: ${{ vars.WEB_URL }}
         run: |
-          for i in $(seq 1 20); do
+          for i in $(seq 1 30); do
             body=$(curl -fsS "$WEB_URL/" || true)
-            if echo "$body" | grep -q "<title>AKIRA Ops</title>"; then
-              curl -sSI "$WEB_URL/" | grep -i "content-security-policy" >/dev/null \
-                && echo "site up, CSP present" && exit 0
-              echo "site up but no CSP header - check public/_headers made it into dist"; exit 1
+            headers=$(curl -sS -D - -o /dev/null "$WEB_URL/" || true)
+            if echo "$body" | grep -q "<title>AKIRA Ops</title>" \
+               && echo "$headers" | grep -qi "content-security-policy"; then
+              echo "site up with CSP after $i tries"; exit 0
             fi
-            sleep 6
+            sleep 10
           done
-          echo "::error::The site did not serve the app within two minutes."; exit 1
+          echo "::error::Within five minutes the site did not serve the app with its CSP header."
+          echo "$headers" | head -20
+          exit 1
