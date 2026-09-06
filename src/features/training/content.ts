@@ -10,7 +10,7 @@
 
 import type { TourStep } from "./tour";
 
-export const MANAGEMENT_VERSION = "management.v1";
+export const MANAGEMENT_VERSION = "management.v2";
 export const FLOOR_VERSION = "floor.v1";
 
 const ADMIN = ["owner", "ops_manager"] as const;
@@ -24,6 +24,19 @@ export const MANAGEMENT_STEPS: readonly TourStep[] = [
     body: {
       en: "This is a short walk through the screens you will use. It takes about two minutes. Tap Next to move on; nothing you do here changes any data.",
       bn: "আপনি যে স্ক্রিনগুলো ব্যবহার করবেন, তার একটি ছোট পরিচয়। প্রায় দুই মিনিট লাগবে। এগোতে Next চাপুন; এখানে কিছুতেই কোনো তথ্য বদলাবে না।",
+    },
+  },
+  {
+    id: "getting-started",
+    anchor: "nav-onboarding",
+    route: "/app",
+    title: {
+      en: "Start here: what this outlet still needs",
+      bn: "এখান থেকে শুরু: এই আউটলেটে আর কী কী দরকার",
+    },
+    body: {
+      en: "Getting started lists what is still missing and the screen that fixes each one. Most of it is four Petpooja exports — Item Wise teaches the menu, Order Listing brings the bills, Category Wise brings the attach rates, and Item Report: Day Wise turns recipes into expected stock usage. Each step ticks itself off once the file is in; there is nothing to mark done by hand.",
+      bn: "Getting started-এ দেখা যায় কী কী বাকি আছে আর কোন স্ক্রিনে গিয়ে সেটা করতে হবে। বেশিরভাগই চারটি Petpooja এক্সপোর্ট — Item Wise মেনু শেখায়, Order Listing বিল আনে, Category Wise অ্যাটাচ রেট আনে, আর Item Report: Day Wise রেসিপি থেকে প্রত্যাশিত স্টক খরচ বার করে। ফাইল আপলোড হলেই ধাপটা নিজে থেকে সম্পূর্ণ হয়ে যায়।",
     },
   },
   {

@@ -281,6 +281,27 @@ export interface paths {
         patch: operations["update_outlet_outlets__outlet_id__patch"];
         trace?: never;
     };
+    "/onboarding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What this outlet still needs before the app can do its job
+         * @description A checklist computed from the data itself, so it can never drift out of
+         *     step with reality. Omit `outlet_id` when the organisation has one outlet.
+         */
+        get: operations["read_onboarding_onboarding_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/devices": {
         parameters: {
             query?: never;
@@ -2764,6 +2785,45 @@ export interface components {
             reported: components["schemas"]["MenuMixReported"] | null;
             measured: components["schemas"]["MenuMixMeasured"];
         };
+        /** OnboardingStatus */
+        OnboardingStatus: {
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** Steps */
+            steps: components["schemas"]["OnboardingStep"][];
+            /** Required Done */
+            required_done: number;
+            /** Required Total */
+            required_total: number;
+            /** Recommended Done */
+            recommended_done: number;
+            /** Recommended Total */
+            recommended_total: number;
+            /** Ready */
+            ready: boolean;
+        };
+        /** OnboardingStep */
+        OnboardingStep: {
+            /** Key */
+            key: string;
+            /** Title */
+            title: string;
+            /** Why */
+            why: string;
+            /** How */
+            how: string;
+            /** Required */
+            required: boolean;
+            /** Done */
+            done: boolean;
+            /** Count */
+            count: number;
+            /** Href */
+            href: string;
+        };
         /** OrderRow */
         OrderRow: {
             /**
@@ -4351,6 +4411,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OutletResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_onboarding_onboarding_get: {
+        parameters: {
+            query?: {
+                outlet_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingStatus"];
                 };
             };
             /** @description Validation Error */

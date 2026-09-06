@@ -10,6 +10,7 @@ import { navigate } from "./navigate";
 
 const NAV = [
   { label: "Dashboard", to: "/app", tour: "nav-dashboard" },
+  { label: "Getting started", to: "/app/onboarding", tour: "nav-onboarding" },
   { label: "SOP Templates", to: "/app/sop/templates", tour: "nav-sop-templates" },
   { label: "Review Queue", to: "/app/sop/review", tour: "nav-review" },
   { label: "Exceptions", to: "/app/sop/exceptions", tour: "nav-exceptions" },

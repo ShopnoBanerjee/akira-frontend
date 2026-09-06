@@ -68,9 +68,13 @@ describe("shell routing", () => {
     expect(canOpenManagement("outlet_manager")).toBe(true);
   });
 
-  it("sends the platform admin to /platform, and lets them read /app", () => {
+  it("gives the platform admin its own shell, not a tenant's", () => {
+    // Regression: with platform_admin in MANAGEMENT_ROLES, a tab left on /app
+    // rendered an organisation dashboard for an account that belongs to no
+    // organisation - every tenant's outlets blended into one list.
     expect(defaultShellFor("platform_admin")).toBe("/platform");
-    expect(canOpenManagement("platform_admin")).toBe(true);
+    expect(canOpenManagement("platform_admin")).toBe(false);
+    expect(MANAGEMENT_ROLES).not.toContain("platform_admin");
     expect(GLOBAL_ROLES).not.toContain("platform_admin");
   });
 });

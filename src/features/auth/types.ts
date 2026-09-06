@@ -6,14 +6,10 @@ export type OutletSummary = components["schemas"]["OutletSummary"];
 export type OrganisationSummary = components["schemas"]["OrganisationSummary"];
 export type UserRole = components["schemas"]["UserRole"];
 
-/** Roles that belong in the /app management shell. The platform admin may
- * open it too, read-only (D33), but lands in /platform. */
-export const MANAGEMENT_ROLES: readonly UserRole[] = [
-  "owner",
-  "ops_manager",
-  "outlet_manager",
-  "platform_admin",
-];
+/** Roles that belong in the /app management shell. The platform admin is
+ * deliberately absent: it has no organisation, so /app has no tenant to show.
+ * Its shell is /platform (D33). */
+export const MANAGEMENT_ROLES: readonly UserRole[] = ["owner", "ops_manager", "outlet_manager"];
 
 /** Roles that see every outlet without an explicit membership. */
 export const GLOBAL_ROLES: readonly UserRole[] = ["owner", "ops_manager"];

@@ -5,6 +5,7 @@ import { redirect } from "./navigate";
 import { useAuth } from "@/features/auth/AuthProvider";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { MfaPage } from "@/features/auth/MfaPage";
+import { OnboardingPage } from "@/features/onboarding/OnboardingPage";
 import { PlatformPage } from "@/features/platform/PlatformPage";
 import { ROLE_LABELS, canOpenManagement, defaultShellFor } from "@/features/auth/types";
 import { DevicesPage } from "@/features/admin/devices/DevicesPage";
@@ -133,10 +134,14 @@ export function Router() {
   }
   if (!me) return <Spinner label="Loading…" />;
 
-  if (pathname.startsWith("/platform")) {
-    if (!me.is_platform_admin) return <Forbidden intended={pathname} />;
-    return <PlatformPage />;
-  }
+  // A platform admin belongs to no organisation, so /app has no single
+  // tenant to render: its dashboard and lists would blend every organisation
+  // together. Their shell is /platform wherever they arrive from - including
+  // a tab left on /app by the previous person, which is how this was found.
+  // Reading one organisation's screens becomes an explicit, scoped act in
+  // P26b; until then the platform sees the platform.
+  if (me.is_platform_admin) return <PlatformPage />;
+  if (pathname.startsWith("/platform")) return <Forbidden intended={pathname} />;
 
   const isManagement = canOpenManagement(me.global_role);
 
@@ -160,6 +165,7 @@ export function Router() {
     else if (countMatch?.[1]) page = <CountReviewPage countId={countMatch[1]} />;
     else if (requisitionMatch?.[1]) page = <RequisitionPage requisitionId={requisitionMatch[1]} />;
     else if (pathname.startsWith("/app/inventory/counts")) page = <StockCountsPage />;
+    else if (pathname.startsWith("/app/onboarding")) page = <OnboardingPage />;
     else if (pathname.startsWith("/app/settings/outlets")) page = <OutletsPage />;
     else if (pathname.startsWith("/app/settings/users")) page = <UsersPage />;
     else if (pathname.startsWith("/app/settings/devices")) page = <DevicesPage />;
