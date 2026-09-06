@@ -104,7 +104,7 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages project list
           postCommands: |
-            wrangler pages project list | grep -q "${{ vars.CF_PAGES_PROJECT }}"               || wrangler pages project create "${{ vars.CF_PAGES_PROJECT }}" --production-branch=main
+            wrangler pages project list | grep -q "${{ vars.CF_PAGES_PROJECT }}" ||               wrangler pages project create "${{ vars.CF_PAGES_PROJECT }}" --production-branch=main
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
