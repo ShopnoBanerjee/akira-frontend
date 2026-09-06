@@ -12,9 +12,13 @@ on:
   # approve, without a commit to hang it on.
   workflow_dispatch:
 
+# A newer push cancels the older run for the same ref, including one parked
+# at the approval gate, so the approval always applies to the newest code.
+# (With this false for pushes, a waiting run held the group and every later
+# push sat "pending" with no jobs.) Deploys are serialised by deploy-web.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 jobs:
   check:
