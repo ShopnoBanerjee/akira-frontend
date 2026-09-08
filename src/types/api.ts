@@ -313,13 +313,39 @@ export interface paths {
         get: operations["list_devices_devices_get"];
         put?: never;
         /**
-         * Register a tablet
+         * Register a tablet whose login already exists
          * @description Owner only. Binds an existing Supabase auth account to one outlet.
          *
          *     The account itself is created out of band, so this API never mints or
          *     transports a credential.
          */
         post: operations["register_device_devices_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/devices/tablets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a tablet, login and all
+         * @description Owner only. Makes the Supabase login, binds it to the outlet, and hands
+         *     the credentials back once.
+         *
+         *     Until now this needed somebody to create an account in the Supabase
+         *     dashboard first and paste its id in, which meant an owner could not put a
+         *     tablet on the counter without a developer. The API mints the credential
+         *     instead — and because it does, tablets are capped like outlets and people.
+         */
+        post: operations["create_tablet_devices_tablets_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2184,6 +2210,16 @@ export interface components {
             /** Code */
             code: string;
         };
+        /** CreateTabletRequest */
+        CreateTabletRequest: {
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** Label */
+            label: string;
+        };
         /** CreateTemplateRequest */
         CreateTemplateRequest: {
             /** Name */
@@ -3451,6 +3487,23 @@ export interface components {
             /** Geo Lng */
             geo_lng?: number | null;
         };
+        /**
+         * TabletCredentials
+         * @description Shown once, at creation, and never retrievable again.
+         *
+         *     A tablet cannot receive mail, so there is no reset link and no "forgot
+         *     password" to fall back on: if this is lost, the owner makes a new tablet.
+         *     Saying so on the screen is part of the feature.
+         */
+        TabletCredentials: {
+            device: components["schemas"]["Device"];
+            /** Email */
+            email: string;
+            /** Password */
+            password: string;
+            /** Detail */
+            detail: string;
+        };
         /** TemplateDetail */
         TemplateDetail: {
             /**
@@ -4506,6 +4559,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Device"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_tablet_devices_tablets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTabletRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TabletCredentials"];
                 };
             };
             /** @description Validation Error */

@@ -63,12 +63,23 @@ export function Label({
   );
 }
 
+/**
+ * A labelled control.
+ *
+ * The label WRAPS the control rather than sitting beside it, which associates
+ * the two implicitly. It used to render a bare <Label> with no `htmlFor` next
+ * to a control with no `id`, so the two were never connected: a screen reader
+ * announced an unlabelled box, and tapping the label did nothing — on a tablet
+ * in a kitchen, where the label is the bigger target, that matters.
+ */
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <Label>{label}</Label>
+    <label className="flex flex-col gap-1.5">
+      <span className="text-xs font-semibold uppercase tracking-wider text-akira-ink/55">
+        {label}
+      </span>
       {children}
-    </div>
+    </label>
   );
 }
 

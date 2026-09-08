@@ -128,6 +128,22 @@ export function useDevices() {
   });
 }
 
+export type CreateTablet = components["schemas"]["CreateTabletRequest"];
+export type TabletCredentials = components["schemas"]["TabletCredentials"];
+
+/**
+ * Creates the tablet's Supabase login as well as the device row, and returns
+ * the credentials once. Nothing keeps them: a tablet has no mailbox, so there
+ * is no reset to fall back on.
+ */
+export function useCreateTablet() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateTablet) => api.post<TabletCredentials>("/devices/tablets", body),
+    onSuccess: () => void client.invalidateQueries({ queryKey: KEYS.devices }),
+  });
+}
+
 export function useUpdateDevice() {
   const client = useQueryClient();
   return useMutation({

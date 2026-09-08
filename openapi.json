@@ -995,7 +995,7 @@
         "tags": [
           "devices"
         ],
-        "summary": "Register a tablet",
+        "summary": "Register a tablet whose login already exists",
         "description": "Owner only. Binds an existing Supabase auth account to one outlet.\n\nThe account itself is created out of band, so this API never mints or\ntransports a credential.",
         "operationId": "register_device_devices_post",
         "security": [
@@ -1035,6 +1035,53 @@
             }
           }
         }
+      }
+    },
+    "/devices/tablets": {
+      "post": {
+        "tags": [
+          "devices"
+        ],
+        "summary": "Create a tablet, login and all",
+        "description": "Owner only. Makes the Supabase login, binds it to the outlet, and hands\nthe credentials back once.\n\nUntil now this needed somebody to create an account in the Supabase\ndashboard first and paste its id in, which meant an owner could not put a\ntablet on the counter without a developer. The API mints the credential\ninstead \u2014 and because it does, tablets are capped like outlets and people.",
+        "operationId": "create_tablet_devices_tablets_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTabletRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TabletCredentials"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/devices/{device_id}": {
@@ -6957,6 +7004,28 @@
         ],
         "title": "CreateOutletRequest"
       },
+      "CreateTabletRequest": {
+        "properties": {
+          "outlet_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Outlet Id"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Label"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "outlet_id",
+          "label"
+        ],
+        "title": "CreateTabletRequest"
+      },
       "CreateTemplateRequest": {
         "properties": {
           "name": {
@@ -10439,6 +10508,34 @@
         "additionalProperties": false,
         "type": "object",
         "title": "SubmitRequest"
+      },
+      "TabletCredentials": {
+        "properties": {
+          "device": {
+            "$ref": "#/components/schemas/Device"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "device",
+          "email",
+          "password",
+          "detail"
+        ],
+        "title": "TabletCredentials",
+        "description": "Shown once, at creation, and never retrievable again.\n\nA tablet cannot receive mail, so there is no reset link and no \"forgot\npassword\" to fall back on: if this is lost, the owner makes a new tablet.\nSaying so on the screen is part of the feature."
       },
       "TemplateDetail": {
         "properties": {

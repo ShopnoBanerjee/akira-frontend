@@ -12,12 +12,22 @@ import {
 } from "@/components/ui/primitives";
 import { useHasRole } from "@/components/RoleGate";
 import { ApiError } from "@/lib/api";
-import { useDevices, useRevokeDevice, useUpdateDevice, type Device } from "../api";
+import {
+  useCreateTablet,
+  useDevices,
+  useOutlets,
+  useRevokeDevice,
+  useUpdateDevice,
+  type Device,
+  type TabletCredentials,
+} from "../api";
 
 export function DevicesPage() {
   const { data: devices, isPending, isError, refetch } = useDevices();
   const isOwner = useHasRole("owner");
   const [revoking, setRevoking] = useState<Device | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [credentials, setCredentials] = useState<TabletCredentials | null>(null);
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
@@ -29,7 +39,12 @@ export function DevicesPage() {
             always attributed to a person.
           </p>
         </div>
+        {isOwner && <Button onClick={() => setCreating(true)}>Add a tablet</Button>}
       </div>
+
+      {credentials && (
+        <CredentialsPanel credentials={credentials} onDismiss={() => setCredentials(null)} />
+      )}
 
       <div className="mt-6">
         {isPending && <TableSkeleton rows={3} />}
@@ -42,8 +57,11 @@ export function DevicesPage() {
         )}
         {devices && devices.length === 0 && (
           <EmptyState
-            title="No tablets registered"
-            hint="Tablets are registered by an owner from the backend, binding a device account to one outlet."
+            title="No tablets yet"
+            hint="A tablet holds one outlet-bound login. Add one here and sign the device in with the credentials it gives you."
+            action={
+              isOwner ? <Button onClick={() => setCreating(true)}>Add a tablet</Button> : undefined
+            }
           />
         )}
         {devices && devices.length > 0 && (
@@ -92,7 +110,142 @@ export function DevicesPage() {
       </div>
 
       <RevokeDialog device={revoking} onClose={() => setRevoking(null)} />
+      <CreateTabletDialog
+        open={creating}
+        onClose={() => setCreating(false)}
+        onCreated={(c) => {
+          setCreating(false);
+          setCredentials(c);
+        }}
+      />
     </main>
+  );
+}
+
+/**
+ * The credentials, once. Deliberately loud and deliberately not dismissible by
+ * accident: a tablet has no mailbox, so nobody can reset this password. If it
+ * is lost the only route back is a new tablet.
+ */
+function CredentialsPanel({
+  credentials,
+  onDismiss,
+}: {
+  credentials: TabletCredentials;
+  onDismiss: () => void;
+}) {
+  const [confirmed, setConfirmed] = useState(false);
+  return (
+    <section className="mt-6 rounded-lg border border-akira-blue/30 bg-akira-blue/5 p-4">
+      <h2 className="text-sm font-semibold">
+        {credentials.device.label} is ready — sign the tablet in now
+      </h2>
+      <p className="mt-1 text-sm text-akira-ink/70">{credentials.detail}</p>
+      <dl className="mt-3 grid gap-2 sm:grid-cols-[7rem_1fr]">
+        <dt className="text-xs font-semibold uppercase tracking-wider text-akira-ink/45">Email</dt>
+        <dd className="break-all font-mono text-sm">{credentials.email}</dd>
+        <dt className="text-xs font-semibold uppercase tracking-wider text-akira-ink/45">
+          Password
+        </dt>
+        <dd className="break-all font-mono text-sm">{credentials.password}</dd>
+      </dl>
+      <label className="mt-3 flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={confirmed}
+          onChange={(e) => setConfirmed(e.target.checked)}
+          className="h-4 w-4"
+        />
+        I have signed the tablet in, or written these down
+      </label>
+      <div className="mt-3">
+        <Button disabled={!confirmed} onClick={onDismiss}>
+          Hide these
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+function CreateTabletDialog({
+  open,
+  onClose,
+  onCreated,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreated: (credentials: TabletCredentials) => void;
+}) {
+  const { data: outlets } = useOutlets();
+  const create = useCreateTablet();
+  const [label, setLabel] = useState("");
+  const [outletId, setOutletId] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  function close() {
+    setLabel("");
+    setOutletId("");
+    setError(null);
+    onClose();
+  }
+
+  const chosen = outletId || outlets?.[0]?.id || "";
+
+  return (
+    <Dialog open={open} onClose={close} title="Add a tablet">
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-akira-ink/70">
+          This creates the tablet's own login as well. You will see the password once, on the next
+          screen — there is no way to look it up later.
+        </p>
+        <Field label="Which outlet">
+          <select
+            value={chosen}
+            onChange={(e) => setOutletId(e.target.value)}
+            className="h-11 w-full rounded-md border border-akira-ink/15 bg-white px-3 text-[15px]"
+          >
+            {(outlets ?? []).map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.name} ({o.code})
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="What to call it">
+          <Input
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder="Kitchen pass tablet"
+            autoComplete="off"
+          />
+        </Field>
+        <ErrorNote>{error}</ErrorNote>
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={close}>
+            Cancel
+          </Button>
+          <Button
+            disabled={!label.trim() || !chosen || create.isPending}
+            onClick={() => {
+              setError(null);
+              create.mutate(
+                { outlet_id: chosen, label: label.trim() },
+                {
+                  onSuccess: (c) => {
+                    setLabel("");
+                    setOutletId("");
+                    onCreated(c);
+                  },
+                  onError: (e) => setError(e instanceof ApiError ? e.problem.detail : e.message),
+                },
+              );
+            }}
+          >
+            {create.isPending ? "Creating…" : "Create tablet"}
+          </Button>
+        </div>
+      </div>
+    </Dialog>
   );
 }
 

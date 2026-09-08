@@ -29,7 +29,10 @@ export const MANAGEMENT_STEPS: readonly TourStep[] = [
   {
     id: "getting-started",
     anchor: "nav-onboarding",
-    route: "/app",
+    // The tour opens the page rather than only pointing at the link: this is
+    // the one screen a new owner has to act on, and being shown where it is
+    // is not the same as being taken there.
+    route: "/app/onboarding",
     title: {
       en: "Start here: what this outlet still needs",
       bn: "এখান থেকে শুরু: এই আউটলেটে আর কী কী দরকার",
