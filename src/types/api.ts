@@ -209,6 +209,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/platform/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Across every organisation */
+        get: operations["read_overview_platform_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/platform/organisations": {
         parameters: {
             query?: never;
@@ -216,14 +233,33 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Every organisation on the platform */
+        /** Every organisation, with its usage against its allowance */
         get: operations["list_organisations_platform_organisations_get"];
+        put?: never;
+        /** A new organisation and its first owner */
+        post: operations["create_organisation_platform_organisations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/platform/organisations/{organisation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One organisation: usage, outlets, onboarding, owners, activity */
+        get: operations["read_organisation_platform_organisations__organisation_id__get"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Change an organisation's details, allowances or onboarding */
+        patch: operations["update_organisation_platform_organisations__organisation_id__patch"];
         trace?: never;
     };
     "/outlets": {
@@ -2001,12 +2037,38 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActivityRow */
+        ActivityRow: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Actor Name */
+            actor_name: string | null;
+            /** Action */
+            action: string;
+            /** Entity Table */
+            entity_table: string;
+            /** Outlet Code */
+            outlet_code: string | null;
+        };
         /** AddMenuAliasRequest */
         AddMenuAliasRequest: {
             /** Alias */
             alias: string;
             /** Menu Item Name */
             menu_item_name: string;
+        };
+        /**
+         * Allowance
+         * @description Used against allowed, for one kind of thing.
+         */
+        Allowance: {
+            /** Used */
+            used: number;
+            /** Allowed */
+            allowed: number;
         };
         /** AnswerItemRequest */
         AnswerItemRequest: {
@@ -2182,6 +2244,48 @@ export interface components {
             unit: components["schemas"]["InventoryUnit"];
             /** Notes */
             notes?: string | null;
+        };
+        /** CreateOrganisationRequest */
+        CreateOrganisationRequest: {
+            /** Name */
+            name: string;
+            /** Slug */
+            slug: string;
+            /** Owner Full Name */
+            owner_full_name: string;
+            /**
+             * Owner Email
+             * Format: email
+             */
+            owner_email: string;
+            /**
+             * Max Outlets
+             * @default 100000
+             */
+            max_outlets: number;
+            /**
+             * Max People
+             * @default 100000
+             */
+            max_people: number;
+            /**
+             * Max Devices
+             * @default 10000
+             */
+            max_devices: number;
+        };
+        /** CreateOrganisationResponse */
+        CreateOrganisationResponse: {
+            organisation: components["schemas"]["OrganisationDetail"];
+            /**
+             * Owner Profile Id
+             * Format: uuid
+             */
+            owner_profile_id: string;
+            /** Invite Sent */
+            invite_sent: boolean;
+            /** Detail */
+            detail: string;
         };
         /** CreateOutletRequest */
         CreateOutletRequest: {
@@ -2907,6 +3011,40 @@ export interface components {
             /** Items */
             items: string[];
         };
+        /** OrganisationDetail */
+        OrganisationDetail: {
+            /**
+             * Organisation Id
+             * Format: uuid
+             */
+            organisation_id: string;
+            /** Slug */
+            slug: string;
+            /** Name */
+            name: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Onboarded At */
+            onboarded_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Owners */
+            owners: number;
+            usage: components["schemas"]["OrganisationUsage"];
+            /** People By Role */
+            people_by_role: {
+                [key: string]: number;
+            };
+            /** Outlets */
+            outlets: components["schemas"]["OutletUsage"][];
+            /** Owner Logins */
+            owner_logins: components["schemas"]["OwnerRow"][];
+            /** Recent Activity */
+            recent_activity: components["schemas"]["ActivityRow"][];
+        };
         /** OrganisationRow */
         OrganisationRow: {
             /**
@@ -2922,21 +3060,14 @@ export interface components {
             is_active: boolean;
             /** Onboarded At */
             onboarded_at: string | null;
-            /** Max Outlets */
-            max_outlets: number;
-            /** Max People */
-            max_people: number;
-            /** Outlets */
-            outlets: number;
-            /** People */
-            people: number;
-            /** Owners */
-            owners: number;
             /**
              * Created At
              * Format: date-time
              */
             created_at: string;
+            /** Owners */
+            owners: number;
+            usage: components["schemas"]["OrganisationUsage"];
         };
         /**
          * OrganisationSummary
@@ -2954,6 +3085,36 @@ export interface components {
             name: string;
             /** Onboarded */
             onboarded: boolean;
+        };
+        /**
+         * OrganisationUsage
+         * @description What one customer has and does. The 30-day figures are by business
+         *     date, so a trading night that runs past midnight counts once.
+         */
+        OrganisationUsage: {
+            outlets: components["schemas"]["Allowance"];
+            people: components["schemas"]["Allowance"];
+            tablets: components["schemas"]["Allowance"];
+            /** Checklist Templates */
+            checklist_templates: number;
+            /** Active Assignments */
+            active_assignments: number;
+            /** Runs 30D */
+            runs_30d: number;
+            /** Runs Approved 30D */
+            runs_approved_30d: number;
+            /** Runs Missed 30D */
+            runs_missed_30d: number;
+            /** Uploads 30D */
+            uploads_30d: number;
+            /** Last Upload At */
+            last_upload_at: string | null;
+            /** Bills 30D */
+            bills_30d: number;
+            /** Net Sales 30D Paise */
+            net_sales_30d_paise: number;
+            /** Last Activity At */
+            last_activity_at: string | null;
         };
         /** OutletHealthRow */
         OutletHealthRow: {
@@ -3056,6 +3217,54 @@ export interface components {
             /** Is Primary */
             is_primary: boolean;
         };
+        /** OutletUsage */
+        OutletUsage: {
+            /**
+             * Outlet Id
+             * Format: uuid
+             */
+            outlet_id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** City */
+            city: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Tablets */
+            tablets: number;
+            /** Active Assignments */
+            active_assignments: number;
+            /** Runs 30D */
+            runs_30d: number;
+            /** Bills 30D */
+            bills_30d: number;
+            /** Net Sales 30D Paise */
+            net_sales_30d_paise: number;
+            /** Last Upload At */
+            last_upload_at: string | null;
+            /** Onboarding Done */
+            onboarding_done: number;
+            /** Onboarding Total */
+            onboarding_total: number;
+        };
+        /** OwnerRow */
+        OwnerRow: {
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+            /** Full Name */
+            full_name: string;
+            /** Email */
+            email: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Last Seen At */
+            last_seen_at: string | null;
+        };
         /**
          * PersonTraining
          * @description One row of the owner's 'who has been trained' view.
@@ -3115,6 +3324,32 @@ export interface components {
             content_type: string;
             /** Byte Size */
             byte_size: number;
+        };
+        /**
+         * PlatformOverview
+         * @description Across every organisation. What the vendor looks at first.
+         */
+        PlatformOverview: {
+            /** Organisations */
+            organisations: number;
+            /** Organisations Active */
+            organisations_active: number;
+            /** Organisations Onboarded */
+            organisations_onboarded: number;
+            /** Outlets */
+            outlets: number;
+            /** People */
+            people: number;
+            /** Tablets */
+            tablets: number;
+            /** Runs 30D */
+            runs_30d: number;
+            /** Runs Approved 30D */
+            runs_approved_30d: number;
+            /** Bills 30D */
+            bills_30d: number;
+            /** Net Sales 30D Paise */
+            net_sales_30d_paise: number;
         };
         /** QueueRow */
         QueueRow: {
@@ -3746,6 +3981,25 @@ export interface components {
             phone?: string | null;
         };
         /**
+         * UpdateOrganisationRequest
+         * @description Everything the vendor controls about a customer. Each field is optional
+         *     so the screen can save one section without resending the rest.
+         */
+        UpdateOrganisationRequest: {
+            /** Name */
+            name?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Onboarded */
+            onboarded?: boolean | null;
+            /** Max Outlets */
+            max_outlets?: number | null;
+            /** Max People */
+            max_people?: number | null;
+            /** Max Devices */
+            max_devices?: number | null;
+        };
+        /**
          * UpdateOutletRequest
          * @description Every field optional: a PATCH changes only what it names.
          *
@@ -4297,6 +4551,26 @@ export interface operations {
             };
         };
     };
+    read_overview_platform_overview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformOverview"];
+                };
+            };
+        };
+    };
     list_organisations_platform_organisations_get: {
         parameters: {
             query?: never;
@@ -4313,6 +4587,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrganisationRow"][];
+                };
+            };
+        };
+    };
+    create_organisation_platform_organisations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrganisationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateOrganisationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_organisation_platform_organisations__organisation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organisation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganisationDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_organisation_platform_organisations__organisation_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organisation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOrganisationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganisationDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

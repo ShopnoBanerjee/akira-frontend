@@ -6,7 +6,9 @@ import { useAuth } from "@/features/auth/AuthProvider";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { MfaPage } from "@/features/auth/MfaPage";
 import { OnboardingPage } from "@/features/onboarding/OnboardingPage";
-import { PlatformPage } from "@/features/platform/PlatformPage";
+import { OrganisationPage } from "@/features/platform/OrganisationPage";
+import { PlatformDashboard } from "@/features/platform/PlatformDashboard";
+import { PlatformShell } from "@/features/platform/PlatformShell";
 import { ROLE_LABELS, canOpenManagement, defaultShellFor } from "@/features/auth/types";
 import { DevicesPage } from "@/features/admin/devices/DevicesPage";
 import { InventoryPage } from "@/features/admin/inventory/InventoryPage";
@@ -48,6 +50,35 @@ function usePathname(): string {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
   return pathname;
+}
+
+/** The management page for a /app path. Shared by an organisation's own
+ * managers and by the platform once it has opened that organisation. */
+function appPage(pathname: string) {
+  const reviewMatch = /^\/app\/sop\/review\/([0-9a-f-]{36})/.exec(pathname);
+  const countMatch = /^\/app\/inventory\/counts\/([0-9a-f-]{36})/.exec(pathname);
+  const requisitionMatch = /^\/app\/inventory\/requisitions\/([0-9a-f-]{36})/.exec(pathname);
+  const builderMatch = /^\/app\/sop\/templates\/([0-9a-f-]{36})/.exec(pathname);
+  if (builderMatch?.[1]) return <TemplateBuilderPage templateId={builderMatch[1]} />;
+  if (pathname.startsWith("/app/sop/templates")) return <TemplatesPage />;
+  if (pathname.startsWith("/app/sop/assignments")) return <AssignmentsPage />;
+  if (reviewMatch?.[1]) return <ReviewDetailPage runId={reviewMatch[1]} />;
+  if (pathname.startsWith("/app/sop/review")) return <ReviewQueuePage />;
+  if (pathname.startsWith("/app/sop/exceptions")) return <ExceptionsPage />;
+  if (pathname.startsWith("/app/sop/reference-photos")) return <ReferencePhotosPage />;
+  if (pathname.startsWith("/app/sales")) return <SalesPage />;
+  if (countMatch?.[1]) return <CountReviewPage countId={countMatch[1]} />;
+  if (requisitionMatch?.[1]) return <RequisitionPage requisitionId={requisitionMatch[1]} />;
+  if (pathname.startsWith("/app/inventory/counts")) return <StockCountsPage />;
+  if (pathname.startsWith("/app/onboarding")) return <OnboardingPage />;
+  if (pathname.startsWith("/app/settings/outlets")) return <OutletsPage />;
+  if (pathname.startsWith("/app/settings/users")) return <UsersPage />;
+  if (pathname.startsWith("/app/settings/devices")) return <DevicesPage />;
+  if (pathname.startsWith("/app/settings/recipes")) return <RecipesPage />;
+  if (pathname.startsWith("/app/settings/inventory")) return <InventoryPage />;
+  if (pathname.startsWith("/app/settings/jobs")) return <JobsPage />;
+  if (pathname.startsWith("/app/settings")) return <SettingsPage />;
+  return <DashboardPage />;
 }
 
 function PendingActivation({ reason }: { reason: string | null }) {
@@ -95,7 +126,7 @@ function Forbidden({ intended }: { intended: string }) {
 }
 
 export function Router() {
-  const { status, me, pendingReason } = useAuth();
+  const { status, me, identity, platformOrganisation, pendingReason } = useAuth();
   const pathname = usePathname();
 
   // Send each person to the shell built for their role, once per sign-in.
@@ -106,19 +137,19 @@ export function Router() {
   // never reach the management UI.
   const redirectedFor = useRef<string | null>(null);
   useEffect(() => {
-    if (status !== "ready" || !me) {
+    if (status !== "ready" || !identity) {
       if (status === "signed-out") redirectedFor.current = null;
       return;
     }
-    if (redirectedFor.current === me.profile_id) return;
-    redirectedFor.current = me.profile_id;
+    if (redirectedFor.current === identity.profile_id) return;
+    redirectedFor.current = identity.profile_id;
     // Only redirect from the entry points. Sign-out resets the path to "/",
     // so a tablet handover still routes the next person to their own shell -
     // but someone opening a deep link like /app/settings/inventory keeps it.
     if (pathname === "/" || pathname === "/login") {
-      redirect(defaultShellFor(me.global_role));
+      redirect(defaultShellFor(identity.global_role));
     }
-  }, [status, me, pathname]);
+  }, [status, identity, pathname]);
 
   if (status === "loading") {
     return <Spinner label="Loading your account…" />;
@@ -132,50 +163,37 @@ export function Router() {
   if (status === "mfa-required") {
     return <MfaPage />;
   }
-  if (!me) return <Spinner label="Loading…" />;
+  if (!me || !identity) return <Spinner label="Loading…" />;
 
-  // A platform admin belongs to no organisation, so /app has no single
-  // tenant to render: its dashboard and lists would blend every organisation
-  // together. Their shell is /platform wherever they arrive from - including
-  // a tab left on /app by the previous person, which is how this was found.
-  // Reading one organisation's screens becomes an explicit, scoped act in
-  // P26b; until then the platform sees the platform.
-  if (me.is_platform_admin) return <PlatformPage />;
+  if (identity.is_platform_admin) {
+    // Inside an organisation it opened, the platform uses that organisation's
+    // own screens as its owner (D35). There is no training gate: the tour is
+    // for the people who work there, not for the vendor passing through.
+    if (platformOrganisation && pathname.startsWith("/app")) {
+      return <AppShell>{appPage(pathname)}</AppShell>;
+    }
+    // Otherwise the platform's own console, wherever it arrived from —
+    // including a tab left on /app by the previous person.
+    const organisationMatch = /^\/platform\/organisations\/([0-9a-f-]{36})/.exec(pathname);
+    return (
+      <PlatformShell>
+        {organisationMatch?.[1] ? (
+          <OrganisationPage organisationId={organisationMatch[1]} />
+        ) : (
+          <PlatformDashboard />
+        )}
+      </PlatformShell>
+    );
+  }
   if (pathname.startsWith("/platform")) return <Forbidden intended={pathname} />;
-
-  const isManagement = canOpenManagement(me.global_role);
 
   if (pathname.startsWith("/app")) {
     // A shift lead or staff member reaching /app gets an explanation, not a
     // silent redirect that looks like the app is broken.
-    if (!isManagement) return <Forbidden intended={pathname} />;
-    let page = <DashboardPage />;
-    const reviewMatch = /^\/app\/sop\/review\/([0-9a-f-]{36})/.exec(pathname);
-    const countMatch = /^\/app\/inventory\/counts\/([0-9a-f-]{36})/.exec(pathname);
-    const requisitionMatch = /^\/app\/inventory\/requisitions\/([0-9a-f-]{36})/.exec(pathname);
-    const builderMatch = /^\/app\/sop\/templates\/([0-9a-f-]{36})/.exec(pathname);
-    if (builderMatch?.[1]) page = <TemplateBuilderPage templateId={builderMatch[1]} />;
-    else if (pathname.startsWith("/app/sop/templates")) page = <TemplatesPage />;
-    else if (pathname.startsWith("/app/sop/assignments")) page = <AssignmentsPage />;
-    else if (reviewMatch?.[1]) page = <ReviewDetailPage runId={reviewMatch[1]} />;
-    else if (pathname.startsWith("/app/sop/review")) page = <ReviewQueuePage />;
-    else if (pathname.startsWith("/app/sop/exceptions")) page = <ExceptionsPage />;
-    else if (pathname.startsWith("/app/sop/reference-photos")) page = <ReferencePhotosPage />;
-    else if (pathname.startsWith("/app/sales")) page = <SalesPage />;
-    else if (countMatch?.[1]) page = <CountReviewPage countId={countMatch[1]} />;
-    else if (requisitionMatch?.[1]) page = <RequisitionPage requisitionId={requisitionMatch[1]} />;
-    else if (pathname.startsWith("/app/inventory/counts")) page = <StockCountsPage />;
-    else if (pathname.startsWith("/app/onboarding")) page = <OnboardingPage />;
-    else if (pathname.startsWith("/app/settings/outlets")) page = <OutletsPage />;
-    else if (pathname.startsWith("/app/settings/users")) page = <UsersPage />;
-    else if (pathname.startsWith("/app/settings/devices")) page = <DevicesPage />;
-    else if (pathname.startsWith("/app/settings/recipes")) page = <RecipesPage />;
-    else if (pathname.startsWith("/app/settings/inventory")) page = <InventoryPage />;
-    else if (pathname.startsWith("/app/settings/jobs")) page = <JobsPage />;
-    else if (pathname.startsWith("/app/settings")) page = <SettingsPage />;
+    if (!canOpenManagement(me.global_role)) return <Forbidden intended={pathname} />;
     return (
       <AppShell>
-        <ManagementTrainingGate>{page}</ManagementTrainingGate>
+        <ManagementTrainingGate>{appPage(pathname)}</ManagementTrainingGate>
       </AppShell>
     );
   }

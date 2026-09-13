@@ -26,8 +26,11 @@ function useRerunRequested(): [boolean, () => void] {
  * renders, because the tour points at its controls.
  */
 export function ManagementTrainingGate({ children }: { children: ReactNode }) {
-  const { me } = useAuth();
-  const enabled = me != null && me.device == null;
+  const { me, platformOrganisation } = useAuth();
+  // Never for the platform inside a customer's organisation: the tour is for
+  // the people who work there, and recording it would put the vendor on the
+  // customer's training list.
+  const enabled = me != null && me.device == null && platformOrganisation == null;
   const status = useTrainingStatus(MANAGEMENT_VERSION, me?.profile_id ?? null, enabled);
   const [rerun, clearRerun] = useRerunRequested();
 

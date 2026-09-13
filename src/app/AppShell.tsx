@@ -58,13 +58,20 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function Footer({ onNavigate }: { onNavigate?: () => void }) {
-  const { me, signOut } = useAuth();
+  const { me, identity, platformOrganisation, signOut } = useAuth();
+  // Inside an organisation the platform acts as its owner, but the footer says
+  // who is really signed in: a vendor must never be mistaken for the customer.
+  const who = platformOrganisation ? identity : me;
   return (
     <div className="border-t border-akira-ink/10 px-5 py-4">
-      <p className="truncate text-sm font-medium">{me?.full_name}</p>
+      <p className="truncate text-sm font-medium">{who?.full_name}</p>
       <p className="text-xs text-akira-ink/50">
-        {me ? ROLE_LABELS[me.global_role] : ""}
-        {me?.organisation ? ` · ${me.organisation.name}` : ""}
+        {who ? ROLE_LABELS[who.global_role] : ""}
+        {platformOrganisation
+          ? ` · inside ${platformOrganisation.name}`
+          : me?.organisation
+            ? ` · ${me.organisation.name}`
+            : ""}
       </p>
       <div className="mt-2 flex items-center gap-4">
         <button
@@ -74,16 +81,49 @@ function Footer({ onNavigate }: { onNavigate?: () => void }) {
         >
           Sign out
         </button>
-        <button
-          onClick={() => {
-            onNavigate?.();
-            window.dispatchEvent(new Event(TOUR_RERUN_EVENT));
-          }}
-          className="min-h-[32px] text-xs font-semibold text-akira-ink/50 hover:text-akira-ink"
-        >
-          Show me around
-        </button>
+        {!platformOrganisation && (
+          <button
+            onClick={() => {
+              onNavigate?.();
+              window.dispatchEvent(new Event(TOUR_RERUN_EVENT));
+            }}
+            className="min-h-[32px] text-xs font-semibold text-akira-ink/50 hover:text-akira-ink"
+          >
+            Show me around
+          </button>
+        )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Shown on every screen while the platform is inside a customer's
+ * organisation. It stays put so there is never a moment when a vendor could
+ * believe it is editing its own data.
+ */
+function PlatformBanner() {
+  const { platformOrganisation, leaveOrganisation } = useAuth();
+  if (!platformOrganisation) return null;
+  return (
+    <div
+      role="status"
+      className="flex flex-wrap items-center justify-between gap-2 border-b border-health-amber/40 bg-health-amber/15 px-4 py-2 text-sm"
+    >
+      <span>
+        <strong>Inside {platformOrganisation.name}</strong> as the platform. Everything you change
+        here is recorded against your platform login.
+      </span>
+      <button
+        onClick={() => {
+          const id = platformOrganisation.id;
+          leaveOrganisation();
+          navigate(`/platform/organisations/${id}`);
+        }}
+        className="min-h-[32px] text-xs font-semibold text-akira-blue hover:underline"
+      >
+        Back to the platform
+      </button>
     </div>
   );
 }
@@ -140,6 +180,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             Sign out
           </button>
         </header>
+        <PlatformBanner />
         <div className="min-h-0 flex-1 overflow-auto bg-[#faf9f8]">{children}</div>
       </div>
 

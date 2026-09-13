@@ -602,12 +602,38 @@
         }
       }
     },
+    "/platform/overview": {
+      "get": {
+        "tags": [
+          "platform"
+        ],
+        "summary": "Across every organisation",
+        "operationId": "read_overview_platform_overview_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlatformOverview"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/platform/organisations": {
       "get": {
         "tags": [
           "platform"
         ],
-        "summary": "Every organisation on the platform",
+        "summary": "Every organisation, with its usage against its allowance",
         "operationId": "list_organisations_platform_organisations_get",
         "responses": {
           "200": {
@@ -630,6 +656,154 @@
             "HTTPBearer": []
           }
         ]
+      },
+      "post": {
+        "tags": [
+          "platform"
+        ],
+        "summary": "A new organisation and its first owner",
+        "operationId": "create_organisation_platform_organisations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrganisationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOrganisationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/platform/organisations/{organisation_id}": {
+      "get": {
+        "tags": [
+          "platform"
+        ],
+        "summary": "One organisation: usage, outlets, onboarding, owners, activity",
+        "operationId": "read_organisation_platform_organisations__organisation_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organisation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organisation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganisationDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "platform"
+        ],
+        "summary": "Change an organisation's details, allowances or onboarding",
+        "operationId": "update_organisation_platform_organisations__organisation_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "organisation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Organisation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrganisationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganisationDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/outlets": {
@@ -6444,6 +6618,54 @@
   },
   "components": {
     "schemas": {
+      "ActivityRow": {
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "entity_table": {
+            "type": "string",
+            "title": "Entity Table"
+          },
+          "outlet_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outlet Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "at",
+          "actor_name",
+          "action",
+          "entity_table",
+          "outlet_code"
+        ],
+        "title": "ActivityRow"
+      },
       "AddMenuAliasRequest": {
         "properties": {
           "alias": {
@@ -6466,6 +6688,25 @@
           "menu_item_name"
         ],
         "title": "AddMenuAliasRequest"
+      },
+      "Allowance": {
+        "properties": {
+          "used": {
+            "type": "integer",
+            "title": "Used"
+          },
+          "allowed": {
+            "type": "integer",
+            "title": "Allowed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "used",
+          "allowed"
+        ],
+        "title": "Allowance",
+        "description": "Used against allowed, for one kind of thing."
       },
       "AnswerItemRequest": {
         "properties": {
@@ -6904,6 +7145,90 @@
           "unit"
         ],
         "title": "CreateItemRequest"
+      },
+      "CreateOrganisationRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$",
+            "title": "Slug"
+          },
+          "owner_full_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Owner Full Name"
+          },
+          "owner_email": {
+            "type": "string",
+            "format": "email",
+            "title": "Owner Email"
+          },
+          "max_outlets": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Max Outlets",
+            "default": 100000
+          },
+          "max_people": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Max People",
+            "default": 100000
+          },
+          "max_devices": {
+            "type": "integer",
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Max Devices",
+            "default": 10000
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "slug",
+          "owner_full_name",
+          "owner_email"
+        ],
+        "title": "CreateOrganisationRequest"
+      },
+      "CreateOrganisationResponse": {
+        "properties": {
+          "organisation": {
+            "$ref": "#/components/schemas/OrganisationDetail"
+          },
+          "owner_profile_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Owner Profile Id"
+          },
+          "invite_sent": {
+            "type": "boolean",
+            "title": "Invite Sent"
+          },
+          "detail": {
+            "type": "string",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "organisation",
+          "owner_profile_id",
+          "invite_sent",
+          "detail"
+        ],
+        "title": "CreateOrganisationResponse"
       },
       "CreateOutletRequest": {
         "properties": {
@@ -8835,6 +9160,95 @@
         ],
         "title": "OrderRow"
       },
+      "OrganisationDetail": {
+        "properties": {
+          "organisation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Organisation Id"
+          },
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "onboarded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Onboarded At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "owners": {
+            "type": "integer",
+            "title": "Owners"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/OrganisationUsage"
+          },
+          "people_by_role": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "People By Role"
+          },
+          "outlets": {
+            "items": {
+              "$ref": "#/components/schemas/OutletUsage"
+            },
+            "type": "array",
+            "title": "Outlets"
+          },
+          "owner_logins": {
+            "items": {
+              "$ref": "#/components/schemas/OwnerRow"
+            },
+            "type": "array",
+            "title": "Owner Logins"
+          },
+          "recent_activity": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityRow"
+            },
+            "type": "array",
+            "title": "Recent Activity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "organisation_id",
+          "slug",
+          "name",
+          "is_active",
+          "onboarded_at",
+          "created_at",
+          "owners",
+          "usage",
+          "people_by_role",
+          "outlets",
+          "owner_logins",
+          "recent_activity"
+        ],
+        "title": "OrganisationDetail"
+      },
       "OrganisationRow": {
         "properties": {
           "organisation_id": {
@@ -8866,30 +9280,17 @@
             ],
             "title": "Onboarded At"
           },
-          "max_outlets": {
-            "type": "integer",
-            "title": "Max Outlets"
-          },
-          "max_people": {
-            "type": "integer",
-            "title": "Max People"
-          },
-          "outlets": {
-            "type": "integer",
-            "title": "Outlets"
-          },
-          "people": {
-            "type": "integer",
-            "title": "People"
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
           },
           "owners": {
             "type": "integer",
             "title": "Owners"
           },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
+          "usage": {
+            "$ref": "#/components/schemas/OrganisationUsage"
           }
         },
         "type": "object",
@@ -8899,12 +9300,9 @@
           "name",
           "is_active",
           "onboarded_at",
-          "max_outlets",
-          "max_people",
-          "outlets",
-          "people",
+          "created_at",
           "owners",
-          "created_at"
+          "usage"
         ],
         "title": "OrganisationRow"
       },
@@ -8937,6 +9335,93 @@
         ],
         "title": "OrganisationSummary",
         "description": "The tenant the caller belongs to (D33)."
+      },
+      "OrganisationUsage": {
+        "properties": {
+          "outlets": {
+            "$ref": "#/components/schemas/Allowance"
+          },
+          "people": {
+            "$ref": "#/components/schemas/Allowance"
+          },
+          "tablets": {
+            "$ref": "#/components/schemas/Allowance"
+          },
+          "checklist_templates": {
+            "type": "integer",
+            "title": "Checklist Templates"
+          },
+          "active_assignments": {
+            "type": "integer",
+            "title": "Active Assignments"
+          },
+          "runs_30d": {
+            "type": "integer",
+            "title": "Runs 30D"
+          },
+          "runs_approved_30d": {
+            "type": "integer",
+            "title": "Runs Approved 30D"
+          },
+          "runs_missed_30d": {
+            "type": "integer",
+            "title": "Runs Missed 30D"
+          },
+          "uploads_30d": {
+            "type": "integer",
+            "title": "Uploads 30D"
+          },
+          "last_upload_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Upload At"
+          },
+          "bills_30d": {
+            "type": "integer",
+            "title": "Bills 30D"
+          },
+          "net_sales_30d_paise": {
+            "type": "integer",
+            "title": "Net Sales 30D Paise"
+          },
+          "last_activity_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Activity At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "outlets",
+          "people",
+          "tablets",
+          "checklist_templates",
+          "active_assignments",
+          "runs_30d",
+          "runs_approved_30d",
+          "runs_missed_30d",
+          "uploads_30d",
+          "last_upload_at",
+          "bills_30d",
+          "net_sales_30d_paise",
+          "last_activity_at"
+        ],
+        "title": "OrganisationUsage",
+        "description": "What one customer has and does. The 30-day figures are by business\ndate, so a trading night that runs past midnight counts once."
       },
       "OutletHealthRow": {
         "properties": {
@@ -9216,6 +9701,144 @@
         ],
         "title": "OutletSummary"
       },
+      "OutletUsage": {
+        "properties": {
+          "outlet_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Outlet Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "tablets": {
+            "type": "integer",
+            "title": "Tablets"
+          },
+          "active_assignments": {
+            "type": "integer",
+            "title": "Active Assignments"
+          },
+          "runs_30d": {
+            "type": "integer",
+            "title": "Runs 30D"
+          },
+          "bills_30d": {
+            "type": "integer",
+            "title": "Bills 30D"
+          },
+          "net_sales_30d_paise": {
+            "type": "integer",
+            "title": "Net Sales 30D Paise"
+          },
+          "last_upload_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Upload At"
+          },
+          "onboarding_done": {
+            "type": "integer",
+            "title": "Onboarding Done"
+          },
+          "onboarding_total": {
+            "type": "integer",
+            "title": "Onboarding Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "outlet_id",
+          "code",
+          "name",
+          "city",
+          "is_active",
+          "tablets",
+          "active_assignments",
+          "runs_30d",
+          "bills_30d",
+          "net_sales_30d_paise",
+          "last_upload_at",
+          "onboarding_done",
+          "onboarding_total"
+        ],
+        "title": "OutletUsage"
+      },
+      "OwnerRow": {
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Profile Id"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Seen At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "full_name",
+          "email",
+          "is_active",
+          "last_seen_at"
+        ],
+        "title": "OwnerRow"
+      },
       "PersonTraining": {
         "properties": {
           "profile_id": {
@@ -9427,6 +10050,65 @@
           "byte_size"
         ],
         "title": "PhotoUrlRequest"
+      },
+      "PlatformOverview": {
+        "properties": {
+          "organisations": {
+            "type": "integer",
+            "title": "Organisations"
+          },
+          "organisations_active": {
+            "type": "integer",
+            "title": "Organisations Active"
+          },
+          "organisations_onboarded": {
+            "type": "integer",
+            "title": "Organisations Onboarded"
+          },
+          "outlets": {
+            "type": "integer",
+            "title": "Outlets"
+          },
+          "people": {
+            "type": "integer",
+            "title": "People"
+          },
+          "tablets": {
+            "type": "integer",
+            "title": "Tablets"
+          },
+          "runs_30d": {
+            "type": "integer",
+            "title": "Runs 30D"
+          },
+          "runs_approved_30d": {
+            "type": "integer",
+            "title": "Runs Approved 30D"
+          },
+          "bills_30d": {
+            "type": "integer",
+            "title": "Bills 30D"
+          },
+          "net_sales_30d_paise": {
+            "type": "integer",
+            "title": "Net Sales 30D Paise"
+          }
+        },
+        "type": "object",
+        "required": [
+          "organisations",
+          "organisations_active",
+          "organisations_onboarded",
+          "outlets",
+          "people",
+          "tablets",
+          "runs_30d",
+          "runs_approved_30d",
+          "bills_30d",
+          "net_sales_30d_paise"
+        ],
+        "title": "PlatformOverview",
+        "description": "Across every organisation. What the vendor looks at first."
       },
       "QueueRow": {
         "properties": {
@@ -11318,6 +12000,88 @@
         "type": "object",
         "title": "UpdateMeRequest",
         "description": "Only what a person may change about themselves.\n\nRole, outlets and activation are deliberately absent: allowing them here\nwould let anyone promote themselves through their own profile."
+      },
+      "UpdateOrganisationRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          },
+          "onboarded": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Onboarded"
+          },
+          "max_outlets": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Outlets"
+          },
+          "max_people": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max People"
+          },
+          "max_devices": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Devices"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UpdateOrganisationRequest",
+        "description": "Everything the vendor controls about a customer. Each field is optional\nso the screen can save one section without resending the rest."
       },
       "UpdateOutletRequest": {
         "properties": {

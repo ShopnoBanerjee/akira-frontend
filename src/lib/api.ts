@@ -42,6 +42,31 @@ export function setActor(actor: StoredActor | null): void {
   window.dispatchEvent(new Event("akira:actor-changed"));
 }
 
+/**
+ * The organisation the platform admin has opened (D35). Written by
+ * AuthProvider, read here so every request made inside that organisation
+ * carries it. sessionStorage, like the actor: a browser restart drops back to
+ * the platform view instead of quietly reopening a customer's data.
+ */
+export const PLATFORM_ORGANISATION_KEY = "akira.platformOrganisation";
+
+/** About the platform login itself. The API ignores the header on these, and
+ * sending it anyway would only make the platform's own requests read oddly in
+ * a log. */
+const PLATFORM_OWN_PREFIXES = ["/platform", "/users/me", "/healthz", "/readyz"];
+
+export function organisationHeaderFor(path: string): Record<string, string> {
+  if (PLATFORM_OWN_PREFIXES.some((prefix) => path.startsWith(prefix))) return {};
+  try {
+    const raw = sessionStorage.getItem(PLATFORM_ORGANISATION_KEY);
+    if (!raw) return {};
+    const { id } = JSON.parse(raw) as { id?: unknown };
+    return typeof id === "string" && id ? { "X-Organisation": id } : {};
+  } catch {
+    return {};
+  }
+}
+
 /** RFC 7807 problem+json, as the API emits it. */
 export interface Problem {
   type: string;
@@ -127,6 +152,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       ...(body === undefined || raw ? {} : { "Content-Type": "application/json" }),
       ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
       ...(getActor() ? { "X-Actor-Token": getActor()!.token } : {}),
+      ...organisationHeaderFor(path),
       ...headers,
     },
     ...(body === undefined ? {} : { body: raw ? (body as BodyInit) : JSON.stringify(body) }),

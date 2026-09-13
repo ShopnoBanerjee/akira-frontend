@@ -5,6 +5,12 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { ApiError, api, setActor } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
+import {
+  insideOrganisation,
+  readOpenedOrganisation,
+  writeOpenedOrganisation,
+  type OpenedOrganisation,
+} from "./platformOrganisation";
 import { needsSecondFactor, type Me } from "./types";
 
 export type AuthStatus =
@@ -19,7 +25,18 @@ export type AuthStatus =
 interface AuthContextValue {
   status: AuthStatus;
   session: Session | null;
+  /**
+   * Who the screens should treat as signed in. The same as `identity`, except
+   * for a platform admin that has opened an organisation: then it is that
+   * organisation's owner (D35), because that is what the API treats it as.
+   */
   me: Me | null;
+  /** Who actually signed in, whatever organisation is open. */
+  identity: Me | null;
+  /** The organisation the platform admin has opened, if any. */
+  platformOrganisation: OpenedOrganisation | null;
+  enterOrganisation: (organisation: OpenedOrganisation) => void;
+  leaveOrganisation: () => void;
   /** Why the profile could not be loaded, when status is pending-activation. */
   pendingReason: string | null;
   signIn: (email: string, password: string) => Promise<void>;
@@ -33,43 +50,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [session, setSession] = useState<Session | null>(null);
-  const [me, setMe] = useState<Me | null>(null);
+  const [identity, setIdentity] = useState<Me | null>(null);
+  const [opened, setOpened] = useState<OpenedOrganisation | null>(() => readOpenedOrganisation());
   const [pendingReason, setPendingReason] = useState<string | null>(null);
 
-  const loadProfile = useCallback(async (current: Session | null) => {
-    if (!current) {
-      setMe(null);
-      setPendingReason(null);
-      setStatus("signed-out");
-      return;
-    }
-    try {
-      const profile = await api.get<Me>("/users/me");
-      setMe(profile);
-      setPendingReason(null);
-      // /users/me is the one call the API answers before the second factor;
-      // everything else would come back as an mfa-required problem.
-      setStatus(needsSecondFactor(profile) ? "mfa-required" : "ready");
-    } catch (error) {
-      setMe(null);
-      if (error instanceof ApiError && error.isPendingActivation) {
-        // A real state, not a failure: the account exists and is waiting.
-        setPendingReason(error.problem.detail);
-        setStatus("pending-activation");
-        return;
-      }
-      if (error instanceof ApiError && error.isUnauthenticated) {
+  const forgetOpened = useCallback(() => {
+    writeOpenedOrganisation(null);
+    setOpened(null);
+  }, []);
+
+  const loadProfile = useCallback(
+    async (current: Session | null) => {
+      if (!current) {
+        setIdentity(null);
+        setPendingReason(null);
         setStatus("signed-out");
         return;
       }
-      if (error instanceof ApiError && error.isMfaRequired) {
-        setStatus("mfa-required");
-        return;
+      try {
+        const profile = await api.get<Me>("/users/me");
+        setIdentity(profile);
+        // An opened organisation belongs to the platform login that opened it.
+        // Anyone else signing in on this browser starts outside, always.
+        if (!profile.is_platform_admin) forgetOpened();
+        setPendingReason(null);
+        // /users/me is the one call the API answers before the second factor;
+        // everything else would come back as an mfa-required problem.
+        setStatus(needsSecondFactor(profile) ? "mfa-required" : "ready");
+      } catch (error) {
+        setIdentity(null);
+        if (error instanceof ApiError && error.isPendingActivation) {
+          // A real state, not a failure: the account exists and is waiting.
+          setPendingReason(error.problem.detail);
+          setStatus("pending-activation");
+          return;
+        }
+        if (error instanceof ApiError && error.isUnauthenticated) {
+          setStatus("signed-out");
+          return;
+        }
+        if (error instanceof ApiError && error.isMfaRequired) {
+          setStatus("mfa-required");
+          return;
+        }
+        setPendingReason(error instanceof Error ? error.message : "Could not load your profile.");
+        setStatus("pending-activation");
       }
-      setPendingReason(error instanceof Error ? error.message : "Could not load your profile.");
-      setStatus("pending-activation");
-    }
-  }, []);
+    },
+    [forgetOpened],
+  );
 
   useEffect(() => {
     let active = true;
@@ -93,6 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
         queryClient.clear();
       }
+      if (event === "SIGNED_OUT") forgetOpened();
       setStatus("loading");
       void loadProfile(next);
     });
@@ -101,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       active = false;
       subscription.unsubscribe();
     };
-  }, [loadProfile, queryClient]);
+  }, [loadProfile, queryClient, forgetOpened]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -111,9 +141,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     queryClient.clear();
-    setMe(null);
+    setIdentity(null);
     setPendingReason(null);
     setStatus("signed-out");
+    forgetOpened();
     // Drop the PIN-minted actor with the session. Without this the token sat
     // in sessionStorage through a device sign-out, and the next person to sign
     // the shared tablet in resumed as the PREVIOUS staff member, no PIN asked
@@ -122,16 +153,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Clear the path too. On a shared tablet the next person must not inherit
     // where the last one happened to be.
     window.history.replaceState({}, "", "/");
-  }, [queryClient]);
+  }, [queryClient, forgetOpened]);
 
   const refresh = useCallback(async () => {
     const { data } = await supabase.auth.getSession();
     await loadProfile(data.session);
   }, [loadProfile]);
 
+  // Every cached answer belongs to the view it was fetched in. Crossing into or
+  // out of a customer must never show one organisation's data in another's
+  // screen, or the platform's totals inside a customer.
+  const enterOrganisation = useCallback(
+    (organisation: OpenedOrganisation) => {
+      writeOpenedOrganisation(organisation);
+      queryClient.clear();
+      setOpened(organisation);
+    },
+    [queryClient],
+  );
+
+  const leaveOrganisation = useCallback(() => {
+    forgetOpened();
+    queryClient.clear();
+  }, [forgetOpened, queryClient]);
+
+  const me = useMemo(
+    () =>
+      identity && opened && identity.is_platform_admin && status === "ready"
+        ? insideOrganisation(identity, opened)
+        : identity,
+    [identity, opened, status],
+  );
+  const platformOrganisation = identity?.is_platform_admin ? opened : null;
+
   const value = useMemo(
-    () => ({ status, session, me, pendingReason, signIn, signOut, refresh }),
-    [status, session, me, pendingReason, signIn, signOut, refresh],
+    () => ({
+      status,
+      session,
+      me,
+      identity,
+      platformOrganisation,
+      enterOrganisation,
+      leaveOrganisation,
+      pendingReason,
+      signIn,
+      signOut,
+      refresh,
+    }),
+    [
+      status,
+      session,
+      me,
+      identity,
+      platformOrganisation,
+      enterOrganisation,
+      leaveOrganisation,
+      pendingReason,
+      signIn,
+      signOut,
+      refresh,
+    ],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;
